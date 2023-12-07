@@ -21,7 +21,8 @@ import {
   View,
   VirtualizedList,
 } from 'react-native'
-import type {
+import {
+  Mixin,
   AnyComponent,
   AnyTheme,
   BaseObject,
@@ -32,6 +33,7 @@ import type {
   Styles,
   Themed,
   UnknownProps,
+  AsComponentProps,
 } from './types'
 
 /**
@@ -66,10 +68,8 @@ const DynamicSymbol = Symbol('dynamic')
 export const dynamic = (fn: DynamicStyleFn) => ({ type: DynamicSymbol, fn })
 export const isDynamic = (obj: any): obj is ReturnType<typeof dynamic> => obj?.type === DynamicSymbol
 
-const MixinSymbol = Symbol('mixin')
-export const mixin = (styles: StylePair[]) => ({ type: MixinSymbol, styles })
-type MixinEntry = ReturnType<typeof mixin>
-const isMixin = (obj: any): obj is ReturnType<typeof mixin> => obj?.type === MixinSymbol
+export const mixin = (styles: StylePair[]) => new Mixin(styles)
+const isMixin = (obj: any): obj is ReturnType<typeof mixin> => obj instanceof Mixin
 
 interface SplitStylesResult {
   fixed: UnknownProps
@@ -93,7 +93,7 @@ export function splitStyles(styles: StylePair[], result: SplitStylesResult = { f
 
 export function buildDynamicStyles(
   props: Themed<UnknownProps, AnyTheme>,
-  dynamic: Array<[string, DynamicStyleFn | StylePair[] | MixinEntry | unknown]>,
+  dynamic: Array<[string, DynamicStyleFn | StylePair[] | Mixin | unknown]>,
   acc: UnknownProps = {}
 ) {
   for (const [key, fnOrResult] of dynamic) {
@@ -159,7 +159,7 @@ export function createStyled<Theme extends AnyTheme>() {
       const fixedStyle = StyleSheet.create({ fixed }).fixed
 
       // Component
-      const StyledComponent = React.forwardRef((props: UnknownProps & AnyStyleProps, ref) => {
+      const StyledComponent = React.forwardRef((props: UnknownProps & AnyStyleProps & AsComponentProps, ref) => {
         const theme = useContext(ThemeContext)
         let propsWithTheme: Themed<UnknownProps, Theme> = { ...props, theme }
         propsWithTheme = buildPropsFromAttrs(propsWithTheme, attrs)
@@ -169,7 +169,7 @@ export function createStyled<Theme extends AnyTheme>() {
           style = StyleSheet.compose(style, dynamicStyle)
         }
         style = StyleSheet.compose(style, props.style)
-        const CastedComponent = Component as AnyComponent
+        const CastedComponent = (props.as ?? Component) as AnyComponent
         return <CastedComponent {...propsWithTheme} theme={props.theme} style={style} ref={ref} />
       })
 
@@ -210,7 +210,7 @@ export function createStyled<Theme extends AnyTheme>() {
   function css<Props extends object = BaseObject>(
     _styles: Styles<Themed<Props, Theme>>,
     ..._interpolations: Array<Interpolation<Themed<Props, Theme>>>
-  ): MixinEntry {
+  ) {
     // eslint-disable-next-line prefer-rest-params
     return mixin(arguments[0])
   }

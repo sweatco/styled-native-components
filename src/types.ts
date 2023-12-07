@@ -31,7 +31,7 @@ export type Interpolation<Props extends object> =
   | null
   | RuleSet<Props>
   | Array<Interpolation<Props>>
-  | MixinEntry
+  | Mixin
 
 export type Styles<Props extends object> = TemplateStringsArray | Interpolation<Props>
 
@@ -47,6 +47,8 @@ export type Themed<Props, Theme extends AnyTheme> = Props & {
   theme: Theme
 }
 
+export type AsComponentProps = { as?: React.ComponentType }
+
 export interface Styled<
   C extends AnyComponent,
   Theme extends AnyTheme = BaseObject,
@@ -55,15 +57,15 @@ export interface Styled<
   <Props extends object = OwnProps>(
     styles: Styles<Themed<OwnProps & Props, Theme>>,
     ...interpolations: Array<Interpolation<Themed<OwnProps & Props, Theme>>>
-  ): ForwardRefExoticComponent<Substitute<OwnProps, Props>>
+  ): ForwardRefExoticComponent<Substitute<OwnProps, Props & AsComponentProps>>
   attrs<Props extends object, R extends object = Props>(
     attrs: ((props: Themed<Props & OwnProps, Theme>) => PickProps<R, OwnProps>) | PickProps<R, OwnProps>
   ): Styled<C, Theme, FastOmit<OwnProps, keyof R> & Props & Partial<R>>
 }
 
-export const MixinSymbol = Symbol('mixin')
-export type MixinSymbol = typeof MixinSymbol
-export type MixinEntry = { type: MixinSymbol; styles: StylePair[] }
+export class Mixin {
+  constructor(public styles: StylePair[]) {}
+}
 
 export type UnknownProps = Record<string, unknown>
 export type InnerAttrs = UnknownProps | ((props: Themed<UnknownProps, AnyTheme>) => UnknownProps)
