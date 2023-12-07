@@ -18,6 +18,8 @@ interface StyledObject<Props extends object = BaseObject> {
   [key: string]: StyledObject<Props> | string | number | StyleFunction<Props> | RuleSet<any> | undefined
 }
 
+export type StylePair = [string, unknown]
+
 export type Interpolation<Props extends object> =
   | StyleFunction<Props>
   | StyledObject<Props>
@@ -29,6 +31,7 @@ export type Interpolation<Props extends object> =
   | null
   | RuleSet<Props>
   | Array<Interpolation<Props>>
+  | MixinEntry
 
 export type Styles<Props extends object> = TemplateStringsArray | Interpolation<Props>
 
@@ -57,3 +60,10 @@ export interface Styled<
     attrs: ((props: Themed<Props & OwnProps, Theme>) => PickProps<R, OwnProps>) | PickProps<R, OwnProps>
   ): Styled<C, Theme, FastOmit<OwnProps, keyof R> & Props & Partial<R>>
 }
+
+export const MixinSymbol = Symbol('mixin')
+export type MixinSymbol = typeof MixinSymbol
+export type MixinEntry = { type: MixinSymbol; styles: StylePair[] }
+
+export type UnknownProps = Record<string, unknown>
+export type InnerAttrs = UnknownProps | ((props: Themed<UnknownProps, AnyTheme>) => UnknownProps)

@@ -5,11 +5,15 @@ const {
 } = require('@babel/types')
 const postcss = require('postcss')
 const { getStylesForProperty } = require('css-to-react-native')
+const {colorKeys, stringKeys} = require('./keys')
 
 const STYLED = 'styled'
 const CSS = 'css'
 const MAGIC_NUMBER = 123456789
-const REGEX = new RegExp(`(.*)(\\d+\\.${MAGIC_NUMBER})(.*)`)
+const REGEX = new RegExp(`([^0-9]*)(\\d+\\.${MAGIC_NUMBER})([^0-9]*)`)
+function kebabToCamel(str) {
+    return str.replace(/-./g, match => match.charAt(1).toUpperCase());
+}
 
 const isCSSCallExpression = (node) => isIdentifier(node) && node.name === CSS
 const isStyledCallExpression = (node) => {
@@ -54,11 +58,11 @@ module.exports = function plugin(babel) {
                 if (!isStyled) {
                     return
                 }
-
+                const identifier = isCSSCallExpression(tag) ? CSS : STYLED
                 const css = path.get("quasi").node
                 const { cssText, substitutionMap } = extractSubstitutionMap(css)
                 const styles = parseCss(cssText, substitutionMap)
-                const buildCss = buildCssObject(t, substitutionMap)
+                const buildCss = buildCssObject(identifier, t, substitutionMap)
                 const cssObject = buildCss(styles)
 
                 path.replaceWith(t.callExpression(tag, [cssObject]))
@@ -94,8 +98,12 @@ function extractSubstitutionMap({
 
 function parseCss(cssText, substitutionMap) {
     const lines = cssText.split('\n')
+    const isComment = (key) => key.startsWith('//')
     for (let i = 0; i < lines.length; i++) {
         let line = lines[i].trim()
+        if (isComment(line)) {
+            lines[i] = ''
+        }
         if (line.endsWith(';')) {
             line = line.substring(0, line.length - 1)
         }
@@ -109,7 +117,14 @@ function parseCss(cssText, substitutionMap) {
     const { nodes } = postcss.parse(cssText)
     for (const node of nodes) {
         if (node.type === 'decl') {
-            const styleObject = getStylesForProperty(node.prop, node.value)
+            const key = kebabToCamel(node.prop)
+            let value = node.value
+            let styleObject
+            if (colorKeys.includes(key) || stringKeys.includes(key)) {
+                styleObject = { [key]: value }
+            } else {
+                styleObject = getStylesForProperty(key, value)
+            }
             styles = styles.concat(Object.entries(styleObject))
         }
     }
@@ -118,18 +133,18 @@ function parseCss(cssText, substitutionMap) {
     return styles
 }
 
-function buildCssObject(t, substitutions) {
+function buildCssObject(identifier, t, substitutions) {
     function wrapper(args) {
         return t.callExpression(
             t.memberExpression(
-                t.identifier(STYLED),
-                t.identifier('wrapper')
+                t.identifier(identifier),
+                t.identifier('maybeDynamic')
             ),
             args
         )
     }
     function caller(args) {
-        return t.arrowFunctionExpression([t.restElement(t.identifier('args'))], args)
+        return t.functionExpression(null, [], t.blockStatement([t.returnStatement(args)]))
     }
 
     function splitSubstitution(str) {  
@@ -143,7 +158,7 @@ function buildCssObject(t, substitutions) {
     function travers(context) {
         function inject(substitution) {
             context.push(substitution)
-            return t.memberExpression(t.identifier('args'), t.numericLiteral(context.length - 1), true)
+            return t.memberExpression(t.identifier('arguments'), t.numericLiteral(context.length - 1), true)
         }
         const literals = {
             string(value) {

@@ -21,55 +21,68 @@ import {
   View,
   VirtualizedList,
 } from 'react-native'
-import { AnyComponent, AnyTheme, BaseObject, Interpolation, Styled, Styles, Themed } from './types'
+import type {
+  AnyComponent,
+  AnyTheme,
+  BaseObject,
+  InnerAttrs,
+  Interpolation,
+  StylePair,
+  Styled,
+  Styles,
+  Themed,
+  UnknownProps,
+} from './types'
 
-type UnknownProps = Record<string, unknown>
-type InnerAttrs = UnknownProps | ((props: Themed<UnknownProps, AnyTheme>) => UnknownProps)
-
-function buildPropsFromAttrs(props: Themed<UnknownProps, AnyTheme>, attrs: InnerAttrs[]) {
+/**
+ * Combines passed props and props from attrs
+ * @param props passed props
+ * @param attrs array of props
+ * 
+ * Example:
+ * props - { overriddenNumber: 0 }
+ * attrs - [
+ *  { number: 1, overriddenNumber: 1}, // props as an object
+ *  (props) => { number: props.number + 1, overriddenNumber: props.overriddenNumber + 1 } // props a function
+ * ]
+ * result - { overriddenNumber: 0, number: 2 }
+ */
+export function buildPropsFromAttrs<Theme extends BaseObject = AnyTheme>(props: Themed<UnknownProps, Theme>, attrs: InnerAttrs[]): Themed<UnknownProps, Theme> {
   if (attrs.length === 0) {
-    return
+    return props
   }
-  if (attrs.length === 1) {
-    let [recordOrFn] = attrs
+  attrs = attrs.concat(props)
+  return attrs.reduce<Themed<UnknownProps, Theme>>((acc, recordOrFn) => {
     if (typeof recordOrFn === 'function') {
-      recordOrFn = recordOrFn(props)
-    }
-
-    return recordOrFn
-  }
-  return attrs.reduce<UnknownProps>((acc, recordOrFn) => {
-    if (typeof recordOrFn === 'function') {
-      recordOrFn = recordOrFn(props)
+      recordOrFn = recordOrFn(acc)
     }
     return Object.assign(acc, recordOrFn)
-  }, {})
+  }, { ...props })
 }
 
-type StylePair = [string, unknown]
-type DynamicStyleFn = (props: UnknownProps, theme: AnyTheme) => UnknownProps
+type DynamicStyleFn = (props: Themed<UnknownProps, AnyTheme>) => unknown
 
 const DynamicSymbol = Symbol('dynamic')
-const dynamic = (fn: DynamicStyleFn) => ({ type: DynamicSymbol, fn })
-const isDynamic = (obj: any): obj is ReturnType<typeof dynamic> => obj?.type === DynamicSymbol
+export const dynamic = (fn: DynamicStyleFn) => ({ type: DynamicSymbol, fn })
+export const isDynamic = (obj: any): obj is ReturnType<typeof dynamic> => obj?.type === DynamicSymbol
 
 const MixinSymbol = Symbol('mixin')
-const mixin = (styles: StylePair[]) => ({ type: MixinSymbol, styles })
+export const mixin = (styles: StylePair[]) => ({ type: MixinSymbol, styles })
 type MixinEntry = ReturnType<typeof mixin>
 const isMixin = (obj: any): obj is ReturnType<typeof mixin> => obj?.type === MixinSymbol
 
-interface BuildStylesResult {
+interface SplitStylesResult {
   fixed: UnknownProps
   dynamic: Array<[string, DynamicStyleFn | StylePair]>
 }
 
-function buildStyles(styles: StylePair[], result: BuildStylesResult = { fixed: {}, dynamic: [] }) {
+export function splitStyles(styles: StylePair[], result: SplitStylesResult = { fixed: {}, dynamic: [] }) {
   const { fixed, dynamic } = result
   for (const [key, style] of styles) {
     if (isDynamic(style)) {
       dynamic.push([key, style.fn])
     } else if (isMixin(style)) {
-      buildStyles(style.styles, result)
+      splitStyles(style.styles, result)
     } else {
       fixed[key] = style
     }
@@ -78,7 +91,7 @@ function buildStyles(styles: StylePair[], result: BuildStylesResult = { fixed: {
   return result
 }
 
-function buildDynamicStyles(
+export function buildDynamicStyles(
   props: Themed<UnknownProps, AnyTheme>,
   dynamic: Array<[string, DynamicStyleFn | StylePair[] | MixinEntry | unknown]>,
   acc: UnknownProps = {}
@@ -87,11 +100,41 @@ function buildDynamicStyles(
     const result = typeof fnOrResult === 'function' ? fnOrResult(props) : fnOrResult
     if (isMixin(result)) {
       buildDynamicStyles(props, result.styles, acc)
+    } else if (isDynamic(result)) {
+      acc[key] = result.fn(props)
     } else {
       acc[key] = result
     }
   }
   return acc
+}
+
+/**
+ *  fixed props:
+ *  left: ${1}
+ *  -> left: styled.maybeDynamic((...args) => args[0], 1) (after babel transpilation)
+ *  -> left: 0 (in runtime)
+ *  
+ *  dynamic props:
+ *  left: ${(props) => props.left}
+ *  -> left: styled.maybeDynamic((...args) => args[0], (props) => props.left) (after babel transpilation)
+ *  -> left: dynamic(fn) (in runtime)
+ */
+export function maybeDynamic(fn: (...fnArgs: unknown[]) => unknown, ...args: unknown[]): DynamicStyleFn | unknown {
+  const isDynamic = args.some((arg) => typeof arg === 'function')
+  if (isDynamic) {
+    return dynamic((props: UnknownProps): unknown => {
+      const fnArgs = args.map((arg) => {
+        if (typeof arg === 'function') {
+          return arg(props)
+        }
+
+        return arg
+      })
+      return fn(...fnArgs)
+    })
+  }
+  return fn(...args)
 }
 
 interface AnyStyleProps {
@@ -103,13 +146,23 @@ export function createStyled<Theme extends AnyTheme>() {
 
   function styled<C extends AnyComponent>(Component: C): Styled<C, Theme> {
     const attrs: InnerAttrs[] = []
-    const styledFn = (styles: StylePair[]) => {
-      const { fixed, dynamic } = buildStyles(styles)
+    const innderStyled = (styles: StylePair[]) => {
+      if (process.env.NODE_ENV !== 'production') {
+        if (!Array.isArray(styles)) {
+          throw new Error('It seems you forgot to add babel plugin.')
+        }
+        if (styles.length && !Array.isArray(styles[0])) {
+          throw new Error('It seems you forgot to add babel plugin.')
+        }
+      }
+      const { fixed, dynamic } = splitStyles(styles)
       const fixedStyle = StyleSheet.create({ fixed }).fixed
+
+      // Component
       const StyledComponent = React.forwardRef((props: UnknownProps & AnyStyleProps, ref) => {
         const theme = useContext(ThemeContext)
-        const propsWithTheme = { ...props, theme }
-        const propsFromAttrs = buildPropsFromAttrs(propsWithTheme, attrs)
+        let propsWithTheme: Themed<UnknownProps, Theme> = { ...props, theme }
+        propsWithTheme = buildPropsFromAttrs(propsWithTheme, attrs)
         let style: StyleProp<UnknownProps> = fixedStyle
         if (dynamic.length > 0) {
           const dynamicStyle = buildDynamicStyles(propsWithTheme, dynamic)
@@ -117,16 +170,19 @@ export function createStyled<Theme extends AnyTheme>() {
         }
         style = StyleSheet.compose(style, props.style)
         const CastedComponent = Component as AnyComponent
-        return <CastedComponent {...propsFromAttrs} {...props} style={style} ref={ref} />
+        return <CastedComponent {...propsWithTheme} theme={props.theme} style={style} ref={ref} />
       })
+
       StyledComponent.displayName = 'StyledComponent'
 
       return StyledComponent
     }
-    styledFn.attrs = (attrsOrAttrsFn: InnerAttrs) => {
+    innderStyled.attrs = (attrsOrAttrsFn: InnerAttrs) => {
       attrs.push(attrsOrAttrsFn)
     }
-    return styledFn as unknown as Styled<C, Theme>
+    // We use as unknown as Type constraction here becasue
+    // it is expected that argument so the styled function is transformed to an Array<Array> type during Babel transpilation.
+    return innderStyled as unknown as Styled<C, Theme>
   }
 
   styled.Button = styled(Button)
@@ -148,30 +204,18 @@ export function createStyled<Theme extends AnyTheme>() {
   styled.TouchableWithoutFeedback = styled(TouchableWithoutFeedback)
   styled.ImageBackground = styled(ImageBackground)
 
-  styled.wrapper = (fn: (...args: unknown[]) => UnknownProps, ...args: unknown[]): DynamicStyleFn | unknown => {
-    const isDynamic = args.some((arg) => typeof arg === 'function')
-    if (isDynamic) {
-      return dynamic((props: UnknownProps): UnknownProps => {
-        const fnArgs = args.map((arg) => {
-          if (typeof arg === 'function') {
-            return arg(props)
-          }
+  styled.maybeDynamic = maybeDynamic
 
-          return arg
-        })
-        return fn(...fnArgs)
-      })
-    }
-    return fn(...args)
-  }
-
+  // It is expected that _styles and _interpolations are transformed to an Array<Array> type during Babel transpilation.
   function css<Props extends object = BaseObject>(
     _styles: Styles<Themed<Props, Theme>>,
     ..._interpolations: Array<Interpolation<Themed<Props, Theme>>>
-  ) {
+  ): MixinEntry {
     // eslint-disable-next-line prefer-rest-params
-    return mixin(arguments[0]) as unknown as Array<Interpolation<Props>>
+    return mixin(arguments[0])
   }
+
+  css.maybeDynamic = maybeDynamic
 
   const ThemeProvider = ({ theme, children }: PropsWithChildren<{ theme: Theme }>) => (
     <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>
