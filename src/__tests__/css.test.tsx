@@ -1,4 +1,5 @@
 import { createStyled } from '../styled'
+import { Css } from '../types'
 
 describe('styled props', () => {
     test('Should parse all styled props', () => {
@@ -7,16 +8,16 @@ describe('styled props', () => {
             //comment
             transform: rotate(${'android' === 'android' ? 180 : 0}deg) scale(${1});
             flex: ${1}; // iniline comment
-            flex-direction: ${1};
-            flexDirection: ${1};
-            justify-content: ${1};
-            justifyContent: ${1};
-            align-items: ${1};
-            alignItems: ${1};
-            align-self: ${1};
-            alignSelf: ${1};
-            align-content: ${1};
-            alignContent: ${1};
+            flex-direction: ${'1'};
+            flexDirection: ${'1'};
+            justify-content: ${'1'};
+            justifyContent: ${'1'};
+            align-items: ${'1'};
+            alignItems: ${'1'};
+            align-self: ${'1'};
+            alignSelf: ${'1'};
+            align-content: ${'1'};
+            alignContent: ${'1'};
             width: ${1}px;
             height: ${1}px;
             margin: ${1}px;
@@ -43,33 +44,33 @@ describe('styled props', () => {
             paddingVertical: ${1}px;
             font-size: ${1}px;
             fontSize: ${1}px;
-            font-weight: ${1};
-            fontWeight: ${1};
-            font-style: ${1};
-            fontStyle: ${1};
-            font-family: ${1};
-            fontFamily: ${1};
+            font-weight: ${'1'};
+            fontWeight: ${'1'};
+            font-style: ${'1'};
+            fontStyle: ${'1'};
+            font-family: ${'1'};
+            fontFamily: ${'1'};
             line-height: ${1}px;
             lineHeight: ${1}px;
-            text-align: ${1};
-            textAlign: ${1};
-            color: ${1};
-            background: ${1};
-            background-color: ${1};
-            backgroundColor: ${1};
-            border-color: ${1};
-            borderColor: ${1};
+            text-align: ${'1'};
+            textAlign: ${'1'};
+            color: ${'1'};
+            background: ${'1'};
+            background-color: ${'1'};
+            backgroundColor: ${'1'};
+            border-color: ${'1'};
+            borderColor: ${'1'};
             border-width: ${1}px;
             borderWidth: ${1}px;
             border-radius: ${1}px;
             borderRadius: ${1}px;
             opacity: ${1};
-            resize-mode: ${1};
-            resizeMode: ${1};
-            tint-color: ${1};
-            tintColor: ${1};
-            shadow-color: ${1};
-            shadowColor: ${1};
+            resize-mode: ${'1'};
+            resizeMode: ${'1'};
+            tint-color: ${'1'};
+            tintColor: ${'1'};
+            shadow-color: ${'1'};
+            shadowColor: ${'1'};
             shadow-offset: ${1}px;
             shadowOffset: ${1}px;
             shadow-opacity: ${1};
@@ -77,7 +78,7 @@ describe('styled props', () => {
             shadow-radius: ${1}px;
             shadowRadius: ${1}px;
             elevation: ${1};
-            overflow: ${1};
+            overflow: ${'1'};
             gap: ${1}px;
             row-gap: ${1}px;
             rowGap: ${1}px;
@@ -85,15 +86,15 @@ describe('styled props', () => {
             columnGap: ${1}px;
             z-index: ${1};
             zIndex: ${1};
-            position: ${1};
+            position: ${'1'};
             left: ${1}px;
             top: ${1}px;
             bottom: ${1}px;
             right: ${1}px;
             aspect-ratio: ${1};
             aspectRatio: ${1};
-            direction: ${1};
-            display: ${1};
+            direction: ${'1'};
+            display: ${'1'};
             start: ${1}px;
             end: ${1}px;
             fill: ${1}px;
@@ -235,11 +236,25 @@ describe('styled props', () => {
         const styled = css`
             border: ${1}px solid rgba(90, 234, 178, 0.6);
             transform: ${[{ translateY: 36 }]};
+            transform: ${'rotate(180deg)'};
+            font-family: ${'RobotoMono-Regular'};
+            font-family: 'Inter-Bold';
+            font-family: RobotoMono-Regular;
+            font-family: 'RobotoMono-Regular';
+            ${css`
+                height: 1px;
+            `}
         `
 
         expect(styled.styles).toStrictEqual([
             ['RUNTIME_',[ 'border', '1px solid rgba(90, 234, 178, 0.6)' ]],
-            ['RUNTIME_', ['transform', [{ translateY: 36 }]]]
+            ['RUNTIME_', [ 'transform', [{ translateY: 36 }]] ],
+            ['RUNTIME_', [ 'transform', 'rotate(180deg)' ]],
+            ['fontFamily', 'RobotoMono-Regular'],
+            ['fontFamily', 'Inter-Bold' ],
+            ['fontFamily', 'RobotoMono-Regular'],
+            ['fontFamily', 'RobotoMono-Regular'],
+            ['MIXIN_', new Css([['height', 1]])]
         ])
     })
 })

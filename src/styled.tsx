@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, useContext } from 'react'
+import React, { PropsWithChildren, useContext, useMemo } from 'react'
 import {
   Button,
   Falsy,
@@ -101,6 +101,8 @@ export function buildDynamicStyles(
       if (isCss(result)) {
         const mixinResult = result.styles
         mixinResult && buildDynamicStyles(props, mixinResult, acc)
+      } else {
+        buildDynamicStyles(props, result, acc)
       }
     } else {
       result = isDynamic(result) ? result.fn(props) : result
@@ -157,6 +159,8 @@ export function createStyled<Theme extends AnyTheme>() {
     }
     innderStyled.attrs = (attrsOrAttrsFn: InnerAttrs) => {
       attrs.push(attrsOrAttrsFn)
+
+      return innderStyled
     }
     // We use as unknown as Type constraction here becasue
     // it is expected that argument so the styled function is transformed to an Array<Array> type during Babel transpilation.
@@ -195,9 +199,11 @@ export function createStyled<Theme extends AnyTheme>() {
 
   css.maybeDynamic = maybeDynamic
 
-  const ThemeProvider = ({ theme, children }: PropsWithChildren<{ theme: Theme }>) => (
-    <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>
-  )
+  const ThemeProvider = ({ theme, children }: PropsWithChildren<{ theme: Theme }>) => {
+    const parentTheme = useContext(ThemeContext)
+    const combinedTheme = useMemo(() => ({ ...parentTheme, ...theme }), [parentTheme, theme])
+    return <ThemeContext.Provider value={combinedTheme}>{children}</ThemeContext.Provider>
+  }
 
   return { styled, ThemeProvider, ThemeContext, css }
 }

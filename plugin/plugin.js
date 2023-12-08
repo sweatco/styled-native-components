@@ -179,6 +179,9 @@ function buildCssObject(identifier, t, substitutions) {
                 if (isSubstitution(value)) {
                     const elements = []
                     const expressions = []
+                    if (substitutions[value]) {
+                        return substitutions[value]
+                    }
                     const matches = splitSubstitution(value)
                     for (const match of matches) {
                         const substitution = substitutions[match]

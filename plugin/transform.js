@@ -11,6 +11,7 @@ const colorKeys = [
     'borderBottomColor',
     'borderLeftColor',
     'borderRightColor',
+    'textDecorationColor',
 ]
 const stringKeys = [
     'flexDirection',
@@ -34,10 +35,18 @@ const stringKeys = [
 const runtimeKeys = ['border', 'boxShadow']
 
 const withoutTransform = (key, value) => ({ [key]: value })
+
+const isSurrounded = (value, char) => value[0] === char && value[value.length - 1] === char
+const stringTransform = (key, value) => {
+    if (isSurrounded(value, '\'') || isSurrounded(value, '"')) {
+        value = value.slice(1, -1)
+    }
+    return { [key]: value }
+}
 const runtimeTransform = (key, value) => ({ 'RUNTIME_': [key, value] })
 
 const colorTransforms = colorKeys.map((key) => [key, withoutTransform])
-const stringTransforms = stringKeys.map((key) => [key, withoutTransform])
+const stringTransforms = stringKeys.map((key) => [key, stringTransform])
 const runtimeTransforms = runtimeKeys.map((key) => [key, runtimeTransform])
 
 const CustomTransformers = Object.fromEntries(

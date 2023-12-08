@@ -34,7 +34,15 @@ describe('buildDynamicStyles', () => {
             ])],
             ['MIXIN_', () => css([
                 ['mixin3number', 3],
-            ])]
+            ])],
+            // @ts-expect-error
+            ['MIXIN_', css.maybeDynamic(
+                (arg) => arg,
+                css([
+                    // @ts-expect-error
+                    ['mixin4number', maybeDynamic((arg) => arg, 4)],
+                ])
+            )]
         ])
         const styles = buildDynamicStyles(props, [
             ['number', () => 1],
@@ -73,6 +81,7 @@ describe('buildDynamicStyles', () => {
             mixin2maybeDynamicNumber: 2,
             mixin2dynamic: props,
             mixin3number: 3,
+            mixin4number: 4,
         })
     })
 
