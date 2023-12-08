@@ -1,4 +1,4 @@
-import { isDynamic, maybeDynamic } from '../styled'
+import { isDynamic, maybeDynamic } from '../maybeDynamic'
 
 type Props = any
 type ResultWithFN = { fn: (props: Props) => unknown }

@@ -31,7 +31,7 @@ export type Interpolation<Props extends object> =
   | null
   | RuleSet<Props>
   | Array<Interpolation<Props>>
-  | Mixin
+  | Css
 
 export type Styles<Props extends object> = TemplateStringsArray | Interpolation<Props>
 
@@ -63,8 +63,10 @@ export interface Styled<
   ): Styled<C, Theme, FastOmit<OwnProps, keyof R> & Props & Partial<R>>
 }
 
-export class Mixin {
-  constructor(public styles: StylePair[]) {}
+export type DynamicStyleFn = (props: Themed<UnknownProps, AnyTheme>) => unknown
+
+export class Css {
+  constructor(public styles: StylePair[] | Css | null | undefined | false) {}
 }
 
 export type UnknownProps = Record<string, unknown>

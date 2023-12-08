@@ -1,6 +1,7 @@
 import React, { PropsWithChildren, useContext } from 'react'
 import {
   Button,
+  Falsy,
   FlatList,
   Image,
   ImageBackground,
@@ -21,8 +22,8 @@ import {
   View,
   VirtualizedList,
 } from 'react-native'
+import { getStylesForProperty } from 'css-to-react-native'
 import {
-  Mixin,
   AnyComponent,
   AnyTheme,
   BaseObject,
@@ -34,55 +35,47 @@ import {
   Themed,
   UnknownProps,
   AsComponentProps,
+  DynamicStyleFn,
+  Css,
 } from './types'
+import { isDynamic, maybeDynamic } from './maybeDynamic'
+import { getResult } from './getResult'
+import { buildPropsFromAttrs } from './buildPropsFromAttrs'
 
-/**
- * Combines passed props and props from attrs
- * @param props passed props
- * @param attrs array of props
- * 
- * Example:
- * props - { overriddenNumber: 0 }
- * attrs - [
- *  { number: 1, overriddenNumber: 1}, // props as an object
- *  (props) => { number: props.number + 1, overriddenNumber: props.overriddenNumber + 1 } // props a function
- * ]
- * result - { overriddenNumber: 0, number: 2 }
- */
-export function buildPropsFromAttrs<Theme extends BaseObject = AnyTheme>(props: Themed<UnknownProps, Theme>, attrs: InnerAttrs[]): Themed<UnknownProps, Theme> {
-  if (attrs.length === 0) {
-    return props
+function runtimeParse(acc: UnknownProps, style: unknown) {
+  const [key, value] = style as [string, string]
+  const styles = getStylesForProperty(key, value)
+  const keys = Object.keys(styles)
+
+  for (const key of keys) {
+    acc[key] = styles[key]
   }
-  attrs = attrs.concat(props)
-  return attrs.reduce<Themed<UnknownProps, Theme>>((acc, recordOrFn) => {
-    if (typeof recordOrFn === 'function') {
-      recordOrFn = recordOrFn(acc)
-    }
-    return Object.assign(acc, recordOrFn)
-  }, { ...props })
 }
 
-type DynamicStyleFn = (props: Themed<UnknownProps, AnyTheme>) => unknown
-
-const DynamicSymbol = Symbol('dynamic')
-export const dynamic = (fn: DynamicStyleFn) => ({ type: DynamicSymbol, fn })
-export const isDynamic = (obj: any): obj is ReturnType<typeof dynamic> => obj?.type === DynamicSymbol
-
-export const mixin = (styles: StylePair[]) => new Mixin(styles)
-const isMixin = (obj: any): obj is ReturnType<typeof mixin> => obj instanceof Mixin
+const isCss = (obj: any): obj is Css => obj instanceof Css
+const isMixinKey = (key: string) => key === 'MIXIN_'
+const isRuntimeKey = (key: string) => key === 'RUNTIME_'
 
 interface SplitStylesResult {
   fixed: UnknownProps
   dynamic: Array<[string, DynamicStyleFn | StylePair]>
 }
 
-export function splitStyles(styles: StylePair[], result: SplitStylesResult = { fixed: {}, dynamic: [] }) {
+export function splitStyles(styles: StylePair[] | Css | Falsy, result: SplitStylesResult = { fixed: {}, dynamic: [] }) {
   const { fixed, dynamic } = result
+  if (isCss(styles)) {
+    return splitStyles(styles.styles, result)
+  }
+  if (!styles) {
+    return result
+  }
   for (const [key, style] of styles) {
     if (isDynamic(style)) {
       dynamic.push([key, style.fn])
-    } else if (isMixin(style)) {
+    } else if (isCss(style)) {
       splitStyles(style.styles, result)
+    } else if (isRuntimeKey(key)) {
+      runtimeParse(fixed, style)
     } else {
       fixed[key] = style
     }
@@ -93,48 +86,33 @@ export function splitStyles(styles: StylePair[], result: SplitStylesResult = { f
 
 export function buildDynamicStyles(
   props: Themed<UnknownProps, AnyTheme>,
-  dynamic: Array<[string, DynamicStyleFn | StylePair[] | Mixin | unknown]>,
+  dynamic: Array<[string, DynamicStyleFn | StylePair[]]> | Css | Falsy | StylePair[],
   acc: UnknownProps = {}
 ) {
+  if (!dynamic) {
+    return acc
+  }
+  if (isCss(dynamic)) {
+    return buildDynamicStyles(props, dynamic.styles, acc)
+  }
   for (const [key, fnOrResult] of dynamic) {
-    const result = typeof fnOrResult === 'function' ? fnOrResult(props) : fnOrResult
-    if (isMixin(result)) {
-      buildDynamicStyles(props, result.styles, acc)
-    } else if (isDynamic(result)) {
-      acc[key] = result.fn(props)
+    let result = getResult(props, fnOrResult)
+    if (isMixinKey(key)) {
+      if (isCss(result)) {
+        const mixinResult = result.styles
+        mixinResult && buildDynamicStyles(props, mixinResult, acc)
+      }
     } else {
-      acc[key] = result
+      result = isDynamic(result) ? result.fn(props) : result
+    
+      if (isRuntimeKey(key)) {
+        runtimeParse(acc, result)
+      } else {
+        acc[key] = result
+      }
     }
   }
   return acc
-}
-
-/**
- *  fixed props:
- *  left: ${1}
- *  -> left: styled.maybeDynamic((...args) => args[0], 1) (after babel transpilation)
- *  -> left: 0 (in runtime)
- *  
- *  dynamic props:
- *  left: ${(props) => props.left}
- *  -> left: styled.maybeDynamic((...args) => args[0], (props) => props.left) (after babel transpilation)
- *  -> left: dynamic(fn) (in runtime)
- */
-export function maybeDynamic(fn: (...fnArgs: unknown[]) => unknown, ...args: unknown[]): DynamicStyleFn | unknown {
-  const isDynamic = args.some((arg) => typeof arg === 'function')
-  if (isDynamic) {
-    return dynamic((props: UnknownProps): unknown => {
-      const fnArgs = args.map((arg) => {
-        if (typeof arg === 'function') {
-          return arg(props)
-        }
-
-        return arg
-      })
-      return fn(...fnArgs)
-    })
-  }
-  return fn(...args)
 }
 
 interface AnyStyleProps {
@@ -212,7 +190,7 @@ export function createStyled<Theme extends AnyTheme>() {
     ..._interpolations: Array<Interpolation<Themed<Props, Theme>>>
   ) {
     // eslint-disable-next-line prefer-rest-params
-    return mixin(arguments[0])
+    return new Css(arguments[0])
   }
 
   css.maybeDynamic = maybeDynamic

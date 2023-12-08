@@ -1,13 +1,12 @@
-import { createStyled, dynamic } from '../styled'
+import { createStyled } from '../styled'
 
 describe('styled props', () => {
     test('Should parse all styled props', () => {
         const { css } = createStyled()
-        const dynamicFn = jest.fn()
         const styled = css`
             //comment
             transform: rotate(${'android' === 'android' ? 180 : 0}deg) scale(${1});
-            flex: ${1};
+            flex: ${1}; // iniline comment
             flex-direction: ${1};
             flexDirection: ${1};
             justify-content: ${1};
@@ -48,6 +47,8 @@ describe('styled props', () => {
             fontWeight: ${1};
             font-style: ${1};
             fontStyle: ${1};
+            font-family: ${1};
+            fontFamily: ${1};
             line-height: ${1}px;
             lineHeight: ${1}px;
             text-align: ${1};
@@ -95,6 +96,8 @@ describe('styled props', () => {
             display: ${1};
             start: ${1}px;
             end: ${1}px;
+            fill: ${1}px;
+            border: ${'dashed'} ${'white'} ${3}px;
         `
 
         expect(styled.styles).toStrictEqual([
@@ -148,6 +151,8 @@ describe('styled props', () => {
             [ 'fontWeight', '1' ],
             [ 'fontStyle', '1' ],
             [ 'fontStyle', '1' ],
+            [ 'fontFamily', '1' ],
+            [ 'fontFamily', '1' ],
             [ 'lineHeight', 1 ],
             [ 'lineHeight', 1 ],
             [ 'textAlign', '1' ],
@@ -207,6 +212,8 @@ describe('styled props', () => {
             [ 'display', '1' ],
             [ 'start', 1 ],
             [ 'end', 1 ],
+            [ 'fill', 1 ],
+            [ 'RUNTIME_', ['border', 'dashed white 3px']],
         ])
     })
 })

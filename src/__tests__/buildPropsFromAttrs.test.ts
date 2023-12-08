@@ -1,4 +1,4 @@
-import { buildPropsFromAttrs} from '../styled'
+import { buildPropsFromAttrs} from '../buildPropsFromAttrs'
 
 describe('buildPropsFromAttrs', () => {
     test('Should combine passed props', () => {

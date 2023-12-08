@@ -4,13 +4,13 @@ const {
     isMemberExpression,
 } = require('@babel/types')
 const postcss = require('postcss')
-const { getStylesForProperty } = require('css-to-react-native')
-const {colorKeys, stringKeys} = require('./keys')
+const { transform } = require('./transform')
 
 const STYLED = 'styled'
 const CSS = 'css'
+const MIXIN = 'MIXIN_'
 const MAGIC_NUMBER = 123456789
-const REGEX = new RegExp(`([^0-9]*)(\\d+\\.${MAGIC_NUMBER})([^0-9]*)`)
+const REGEX = new RegExp(`\\d+\.\\d+|[^0-9]+`, 'g')
 function kebabToCamel(str) {
     return str.replace(/-./g, match => match.charAt(1).toUpperCase());
 }
@@ -71,6 +71,23 @@ module.exports = function plugin(babel) {
     }
 }
 
+/**
+ * Input:
+ * quasis = ['prop1: 1px;\nprop2: ', 'px;\nprop3: ', 'px;\n']
+ * expressions = [2, (props) => props.number]
+ * 
+ * Output:
+ * cssText = '
+ *    prop1: 1px;
+ *    prop2: 0.123456789px;
+ *    prop3: 1.123456789px;
+ * '
+ * 
+ * substitutionMap = {
+ *  0.123456789: 2,
+ *  1.123456789: (props) => props.number,
+ * }
+ */
 function extractSubstitutionMap({
   quasis,
   expressions,
@@ -97,35 +114,25 @@ function extractSubstitutionMap({
 }
 
 function parseCss(cssText, substitutionMap) {
+    cssText = cssText.replace(/\/\/.*(?=\n|$)/g, '') // remove inline comments
     const lines = cssText.split('\n')
-    const isComment = (key) => key.startsWith('//')
+    let styles = []
     for (let i = 0; i < lines.length; i++) {
         let line = lines[i].trim()
-        if (isComment(line)) {
-            lines[i] = ''
-        }
         if (line.endsWith(';')) {
             line = line.substring(0, line.length - 1)
         }
         if (substitutionMap[line]) { // mixin
-            line = `${line}:${line};`
-            lines[i] = line
+            styles.push([MIXIN, line])
+            lines[i] = ''
         }
     }
     cssText = lines.join('')
-    let styles = []
     const { nodes } = postcss.parse(cssText)
     for (const node of nodes) {
         if (node.type === 'decl') {
             const key = kebabToCamel(node.prop)
-            let value = node.value
-            let styleObject
-            if (colorKeys.includes(key) || stringKeys.includes(key)) {
-                styleObject = { [key]: value }
-            } else {
-                styleObject = getStylesForProperty(key, value)
-            }
-            styles = styles.concat(Object.entries(styleObject))
+            styles = styles.concat(transform(key, node.value))
         }
     }
     
@@ -134,13 +141,13 @@ function parseCss(cssText, substitutionMap) {
 }
 
 function buildCssObject(identifier, t, substitutions) {
-    function wrapper(args) {
+    function maybeDynamic(fn, args) {
         return t.callExpression(
             t.memberExpression(
                 t.identifier(identifier),
                 t.identifier('maybeDynamic')
             ),
-            args
+            [fn].concat(args)
         )
     }
     function caller(args) {
@@ -148,7 +155,7 @@ function buildCssObject(identifier, t, substitutions) {
     }
 
     function splitSubstitution(str) {  
-        return str.match(REGEX)?.slice(1) ?? []
+        return str.match(REGEX) ?? []
     }
 
     function isSubstitution(value) {
@@ -166,6 +173,9 @@ function buildCssObject(identifier, t, substitutions) {
                     const elements = []
                     const expressions = []
                     const matches = splitSubstitution(value)
+                    if (substitutions[matches[0]]) {
+                        elements.push(t.templateElement({ raw: '' }))
+                    }
                     for (const match of matches) {
                         const substitution = substitutions[match]
                         if (substitution) {
@@ -173,6 +183,9 @@ function buildCssObject(identifier, t, substitutions) {
                         } else {
                             elements.push(t.templateElement({ raw: match }))
                         }
+                    }
+                    if (substitutions[matches[matches.length - 1]]) {
+                        elements.push(t.templateElement({ raw: '' }))
                     }
                     return t.templateLiteral(elements, expressions)
                 }
@@ -212,7 +225,7 @@ function buildCssObject(identifier, t, substitutions) {
             const mapper = travers(args)
             let expression = mapper(value)
             if (args.length) {
-                expression = wrapper([caller(expression)].concat(args))
+                expression = maybeDynamic(caller(expression), args)
             }
             values.push(t.arrayExpression([t.stringLiteral(key), expression]))
         }
