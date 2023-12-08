@@ -216,4 +216,30 @@ describe('styled props', () => {
             [ 'RUNTIME_', ['border', 'dashed white 3px']],
         ])
     })
+
+    test('Should handle negative values', () => {
+        const { css } = createStyled()
+        const styled = css`
+            margin-top: -${1}px;
+            transform: scaleX(${-1});
+        `
+
+        expect(styled.styles).toStrictEqual([
+            [ 'marginTop', -1 ],
+            [ 'transform', [{ scaleX: -1 }] ],
+        ])
+    })
+
+    test('Should parse properly' , () => {
+        const { css } = createStyled()
+        const styled = css`
+            border: ${1}px solid rgba(90, 234, 178, 0.6);
+            transform: ${[{ translateY: 36 }]};
+        `
+
+        expect(styled.styles).toStrictEqual([
+            ['RUNTIME_',[ 'border', '1px solid rgba(90, 234, 178, 0.6)' ]],
+            ['RUNTIME_', ['transform', [{ translateY: 36 }]]]
+        ])
+    })
 })

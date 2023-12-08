@@ -10,7 +10,7 @@ const STYLED = 'styled'
 const CSS = 'css'
 const MIXIN = 'MIXIN_'
 const MAGIC_NUMBER = 123456789
-const REGEX = new RegExp(`\\d+\.\\d+|[^0-9]+`, 'g')
+const REGEX = new RegExp(`(\\d+\\.${MAGIC_NUMBER})`, 'g')
 function kebabToCamel(str) {
     return str.replace(/-./g, match => match.charAt(1).toUpperCase());
 }
@@ -114,7 +114,14 @@ function extractSubstitutionMap({
 }
 
 function parseCss(cssText, substitutionMap) {
-    cssText = cssText.replace(/\/\/.*(?=\n|$)/g, '') // remove inline comments
+    function removeComments(str) {
+        return (
+            str
+                .replace(/\/\*[\s\S]*?\*\//g, '') // remove /* */ comments
+                .replace(/\/\/.*(?=\n|$)/g, '') // remove // comments
+        )
+    }
+    cssText = removeComments(cssText)
     const lines = cssText.split('\n')
     let styles = []
     for (let i = 0; i < lines.length; i++) {
@@ -155,7 +162,7 @@ function buildCssObject(identifier, t, substitutions) {
     }
 
     function splitSubstitution(str) {  
-        return str.match(REGEX) ?? []
+        return str.split(REGEX)
     }
 
     function isSubstitution(value) {
@@ -173,9 +180,6 @@ function buildCssObject(identifier, t, substitutions) {
                     const elements = []
                     const expressions = []
                     const matches = splitSubstitution(value)
-                    if (substitutions[matches[0]]) {
-                        elements.push(t.templateElement({ raw: '' }))
-                    }
                     for (const match of matches) {
                         const substitution = substitutions[match]
                         if (substitution) {
@@ -184,18 +188,20 @@ function buildCssObject(identifier, t, substitutions) {
                             elements.push(t.templateElement({ raw: match }))
                         }
                     }
-                    if (substitutions[matches[matches.length - 1]]) {
-                        elements.push(t.templateElement({ raw: '' }))
-                    }
                     return t.templateLiteral(elements, expressions)
                 }
                 return t.stringLiteral(value)
             },
             number(value) {
                 if (isSubstitution(value)) {
-                    return inject(substitutions[value])
+                    const injection = inject(substitutions[Math.abs(value)])
+
+                    return value < 0 ? t.unaryExpression('-', injection, true) : injection
                 }
                 return t.numericLiteral(value)
+            },
+            undefined() {
+                return t.identifier('undefined')
             },
             object(values) {   
                 if (Array.isArray(values)) {

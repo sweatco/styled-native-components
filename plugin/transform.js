@@ -1,6 +1,17 @@
 const { getStylesForProperty } = require('css-to-react-native')
 
-const colorKeys = ['background', 'borderColor', 'color', 'backgroundColor', 'tintColor', 'shadowColor']
+const colorKeys = [
+    'background',
+    'borderColor',
+    'color',
+    'backgroundColor',
+    'tintColor',
+    'shadowColor',
+    'borderTopColor',
+    'borderBottomColor',
+    'borderLeftColor',
+    'borderRightColor',
+]
 const stringKeys = [
     'flexDirection',
     'justifyContent',
@@ -17,9 +28,10 @@ const stringKeys = [
     'position',
     'direction',
     'display',
+    'textDecorationLine',
 ]
 
-const runtimeKeys = ['border']
+const runtimeKeys = ['border', 'boxShadow']
 
 const withoutTransform = (key, value) => ({ [key]: value })
 const runtimeTransform = (key, value) => ({ 'RUNTIME_': [key, value] })
@@ -36,9 +48,15 @@ const CustomTransformers = Object.fromEntries(
 )
 
 function transform(key, value) {
-    const transformer = CustomTransformers[key] ?? getStylesForProperty
+    let result
+    try {
+        const transformer = CustomTransformers[key] ?? getStylesForProperty
+        result = transformer(key, value)
+    } catch {
+        result = runtimeTransform(key, value)
+    }
 
-    return Object.entries(transformer(key, value))
+    return Object.entries(result)
 }
 
 module.exports = {
