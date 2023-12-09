@@ -41,6 +41,7 @@ import {
 import { isDynamic, maybeDynamic } from './maybeDynamic'
 import { getResult } from './getResult'
 import { buildPropsFromAttrs } from './buildPropsFromAttrs'
+import { MIXIN, RUNTIME } from '../constants'
 
 function runtimeParse(acc: UnknownProps, style: unknown) {
   const [key, value] = style as [string, string]
@@ -53,25 +54,27 @@ function runtimeParse(acc: UnknownProps, style: unknown) {
 }
 
 const isCss = (obj: any): obj is Css => obj instanceof Css
-const isMixinKey = (key: string) => key === 'MIXIN_'
-const isRuntimeKey = (key: string) => key === 'RUNTIME_'
+const isMixinKey = (key: string) => key === MIXIN
+const isRuntimeKey = (key: string) => key === RUNTIME
 
 interface SplitStylesResult {
   fixed: UnknownProps
   dynamic: Array<[string, DynamicStyleFn | StylePair]>
 }
 
-export function splitStyles(styles: StylePair[] | Css | Falsy, result: SplitStylesResult = { fixed: {}, dynamic: [] }) {
+export function splitStyles(styles: StylePair[] | Css | Falsy | unknown, result: SplitStylesResult = { fixed: {}, dynamic: [] }) {
   const { fixed, dynamic } = result
   if (isCss(styles)) {
     return splitStyles(styles.styles, result)
   }
-  if (!styles) {
+  if (!Array.isArray(styles)) {
     return result
   }
   for (const [key, style] of styles) {
     if (isDynamic(style)) {
       dynamic.push([key, style.fn])
+    } else if (isMixinKey(key)) {
+      splitStyles(style, result)
     } else if (isCss(style)) {
       splitStyles(style.styles, result)
     } else if (isRuntimeKey(key)) {
@@ -125,8 +128,7 @@ export function createStyled<Theme extends AnyTheme>() {
   const ThemeContext = React.createContext<Theme>({} as Theme)
 
   function styled<C extends AnyComponent>(Component: C): Styled<C, Theme> {
-    const attrs: InnerAttrs[] = []
-    const innderStyled = (styles: StylePair[]) => {
+    const innerStyled = (styles: StylePair[], attrs: InnerAttrs[] = []) => {
       if (process.env.NODE_ENV !== 'production') {
         if (!Array.isArray(styles)) {
           throw new Error('It seems you forgot to add babel plugin.')
@@ -157,14 +159,16 @@ export function createStyled<Theme extends AnyTheme>() {
 
       return StyledComponent
     }
-    innderStyled.attrs = (attrsOrAttrsFn: InnerAttrs) => {
-      attrs.push(attrsOrAttrsFn)
+    const attrs = (styled: typeof innerStyled) => (attrsOrAttrsFn: InnerAttrs) => {
+      const styledWithAttrs = (styles: StylePair[], attrs: InnerAttrs[] = []) => styled(styles, [attrsOrAttrsFn].concat(attrs))
+      styledWithAttrs.attrs = attrs(styledWithAttrs)
 
-      return innderStyled
+      return styledWithAttrs
     }
+    innerStyled.attrs = attrs(innerStyled)
     // We use as unknown as Type constraction here becasue
     // it is expected that argument so the styled function is transformed to an Array<Array> type during Babel transpilation.
-    return innderStyled as unknown as Styled<C, Theme>
+    return innerStyled as unknown as Styled<C, Theme>
   }
 
   styled.Button = styled(Button)

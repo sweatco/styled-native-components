@@ -5,10 +5,10 @@ const {
 } = require('@babel/types')
 const postcss = require('postcss')
 const { transform } = require('./transform')
+const { MIXIN } = require('../constants')
 
 const STYLED = 'styled'
 const CSS = 'css'
-const MIXIN = 'MIXIN_'
 const MAGIC_NUMBER = 123456789
 const REGEX = new RegExp(`(\\d+\\.${MAGIC_NUMBER})`, 'g')
 function kebabToCamel(str) {

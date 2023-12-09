@@ -1,3 +1,4 @@
+import { MIXIN, RUNTIME } from '../../constants'
 import { createStyled } from '../styled'
 import { Css } from '../types'
 
@@ -214,7 +215,7 @@ describe('styled props', () => {
             [ 'start', 1 ],
             [ 'end', 1 ],
             [ 'fill', 1 ],
-            [ 'RUNTIME_', ['border', 'dashed white 3px']],
+            [ RUNTIME, ['border', 'dashed white 3px']],
         ])
     })
 
@@ -246,19 +247,21 @@ describe('styled props', () => {
             `};
             background: green;
             background: 'yellow';
+            ${null};
         `
 
         expect(styled.styles).toStrictEqual([
-            ['RUNTIME_',[ 'border', '1px solid rgba(90, 234, 178, 0.6)' ]],
-            ['RUNTIME_', [ 'transform', [{ translateY: 36 }]] ],
-            ['RUNTIME_', [ 'transform', 'rotate(180deg)' ]],
-            ['fontFamily', 'RobotoMono-Regular'],
-            ['fontFamily', 'Inter-Bold' ],
-            ['fontFamily', 'RobotoMono-Regular'],
-            ['fontFamily', 'RobotoMono-Regular'],
-            ['MIXIN_', new Css([['height', 1]])],
-            ['backgroundColor', 'green'],
-            ['backgroundColor', 'yellow'],
+            [ RUNTIME,[ 'border', '1px solid rgba(90, 234, 178, 0.6)' ] ],
+            [ RUNTIME, [ 'transform', [{ translateY: 36 }]] ],
+            [ RUNTIME, [ 'transform', 'rotate(180deg)' ]],
+            [ 'fontFamily', 'RobotoMono-Regular' ],
+            [ 'fontFamily', 'Inter-Bold' ],
+            [ 'fontFamily', 'RobotoMono-Regular' ],
+            [ 'fontFamily', 'RobotoMono-Regular' ],
+            [ MIXIN, new Css([[ 'height', 1 ]]) ],
+            [ 'backgroundColor', 'green' ],
+            [ 'backgroundColor', 'yellow' ],
+            [ MIXIN, null ],
         ])
     })
 })

@@ -1,3 +1,4 @@
+import { MIXIN } from '../../constants'
 import { maybeDynamic } from '../maybeDynamic'
 import { splitStyles, createStyled } from '../styled'
 
@@ -16,7 +17,7 @@ describe('splitStyles', () => {
             ['object', { scale: 1 }],
             ['maybeDynamicNumber', maybeDynamic((arg) => arg, 0)],
             ['dynamic', dynamicProp],
-            ['MIXIN_', css([
+            [MIXIN, css([
                 ['mixin1number', 1],
                 ['mixin1string', 'mixin1string'],
                 // @ts-expect-error
@@ -27,7 +28,7 @@ describe('splitStyles', () => {
                 ['mixin1maybeDynamicNumber', maybeDynamic((arg) => arg, 1)],
                 // @ts-expect-error
                 ['mixin1dynamic', dynamicProp],
-                ['MIXIN_', css([
+                [MIXIN, css([
                     ['mixin2number', 2],
                     ['mixin2string', 'mixin2string'],
                     // @ts-expect-error
@@ -38,8 +39,10 @@ describe('splitStyles', () => {
                     ['mixin2maybeDynamicNumber', maybeDynamic((arg) => arg, 2)],
                     // @ts-expect-error
                     ['mixin2dynamic', dynamicProp],
-                ])]
-            ])]
+                    [MIXIN, null],
+                ])],
+            ])],
+            [MIXIN, null],
         ])
 
         expect(fixed).toStrictEqual({

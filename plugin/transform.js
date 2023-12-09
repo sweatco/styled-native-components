@@ -1,4 +1,5 @@
 const { getStylesForProperty } = require('css-to-react-native')
+const { MIXIN, RUNTIME } = require('../constants')
 
 const colorKeys = [
     'background',
@@ -30,6 +31,8 @@ const stringKeys = [
     'direction',
     'display',
     'textDecorationLine',
+    MIXIN,
+    RUNTIME,
 ]
 
 const mapper = {
@@ -45,7 +48,7 @@ const stringTransform = (key, value) => {
     }
     return { [key]: value }
 }
-const runtimeTransform = (key, value) => ({ 'RUNTIME_': [key, value] })
+const runtimeTransform = (key, value) => ({ [RUNTIME]: [key, value] })
 
 const colorTransforms = colorKeys.map((key) => [key, stringTransform])
 const stringTransforms = stringKeys.map((key) => [key, stringTransform])

@@ -1,3 +1,4 @@
+import { MIXIN, RUNTIME } from '../../constants'
 import { maybeDynamic } from '../maybeDynamic'
 import { buildDynamicStyles, createStyled } from '../styled'
 
@@ -20,7 +21,7 @@ describe('buildDynamicStyles', () => {
             ['mixin1maybeDynamicNumber', maybeDynamic((arg) => arg, 1)],
             // @ts-expect-error
             ['mixin1dynamic', maybeDynamic((arg) => arg, (props) => props)],
-            ['MIXIN_', css([
+            [MIXIN, css([
                 ['mixin2number', 2],
                 ['mixin2string', 'mixin2string'],
                 // @ts-expect-error
@@ -32,11 +33,11 @@ describe('buildDynamicStyles', () => {
                 // @ts-expect-error
                 ['mixin2dynamic', maybeDynamic((arg) => arg, (props) => props)],
             ])],
-            ['MIXIN_', () => css([
+            [MIXIN, () => css([
                 ['mixin3number', 3],
             ])],
             // @ts-expect-error
-            ['MIXIN_', css.maybeDynamic(
+            [MIXIN, css.maybeDynamic(
                 (arg) => arg,
                 css([
                     // @ts-expect-error
@@ -52,10 +53,10 @@ describe('buildDynamicStyles', () => {
             ['array', () => ([])],
             ['simpleObject', {}],
             ['simpleArray', []],
-            ['MIXIN_', () => mixin1],
-            ['MIXIN_', () => null],
-            ['MIXIN_', () => undefined],
-            ['MIXIN_', () => false],
+            [MIXIN, () => mixin1],
+            [MIXIN, () => null],
+            [MIXIN, () => undefined],
+            [MIXIN, () => false],
         ])
 
         expect(styles).toStrictEqual({
@@ -92,7 +93,7 @@ describe('buildDynamicStyles', () => {
             theme: {},
         })
         let styles = buildDynamicStyles(props, [
-            ['RUNTIME_', ['border', '2px solid white']],
+            [RUNTIME, ['border', '2px solid white']],
         ])
 
         expect(styles).toStrictEqual({
@@ -102,7 +103,7 @@ describe('buildDynamicStyles', () => {
         })
 
         styles = buildDynamicStyles(props, [
-            ['RUNTIME_', maybeDynamic((...args) => ['border', `${args[0]} ${args[1]} ${args[2]}`], '3px', 'dashed', 'yellow')],
+            [RUNTIME, maybeDynamic((...args) => ['border', `${args[0]} ${args[1]} ${args[2]}`], '3px', 'dashed', 'yellow')],
         ])
 
         expect(styles).toStrictEqual({
@@ -112,7 +113,7 @@ describe('buildDynamicStyles', () => {
         })
 
         styles = buildDynamicStyles(props, [
-            ['RUNTIME_', maybeDynamic((...args) => ['border', `${args[0]}`], () => '4px')],
+            [RUNTIME, maybeDynamic((...args) => ['border', `${args[0]}`], () => '4px')],
         ])
 
         expect(styles).toStrictEqual({
@@ -139,7 +140,7 @@ describe('buildDynamicStyles', () => {
             ['height', 1],
         ])
         styles = buildDynamicStyles(props, [
-            ['MIXIN_', css1],
+            [MIXIN, css1],
             ['height', 2],
         ])
         expect(styles).toStrictEqual({
@@ -148,7 +149,7 @@ describe('buildDynamicStyles', () => {
 
         styles = buildDynamicStyles(props, [
             ['height', 2],
-            ['MIXIN_', css1],
+            [MIXIN, css1],
         ])
         expect(styles).toStrictEqual({
             height: 1,
@@ -156,12 +157,12 @@ describe('buildDynamicStyles', () => {
 
         const css2 = css([
             ['height', 4],
-            ['MIXIN_', css1],
+            [MIXIN, css1],
         ])
 
         styles = buildDynamicStyles(props, [
             ['height', 20],
-            ['MIXIN_', css2],
+            [MIXIN, css2],
         ])
         expect(styles).toStrictEqual({
             height: 1,
