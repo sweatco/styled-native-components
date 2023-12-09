@@ -32,9 +32,11 @@ const stringKeys = [
     'textDecorationLine',
 ]
 
-const runtimeKeys = ['border', 'boxShadow']
+const mapper = {
+    background: 'backgroundColor'
+}
 
-const withoutTransform = (key, value) => ({ [key]: value })
+const runtimeKeys = ['border', 'boxShadow']
 
 const isSurrounded = (value, char) => value[0] === char && value[value.length - 1] === char
 const stringTransform = (key, value) => {
@@ -45,7 +47,7 @@ const stringTransform = (key, value) => {
 }
 const runtimeTransform = (key, value) => ({ 'RUNTIME_': [key, value] })
 
-const colorTransforms = colorKeys.map((key) => [key, withoutTransform])
+const colorTransforms = colorKeys.map((key) => [key, stringTransform])
 const stringTransforms = stringKeys.map((key) => [key, stringTransform])
 const runtimeTransforms = runtimeKeys.map((key) => [key, runtimeTransform])
 
@@ -57,6 +59,7 @@ const CustomTransformers = Object.fromEntries(
 )
 
 function transform(key, value) {
+    key = mapper[key] ?? key
     let result
     try {
         const transformer = CustomTransformers[key] ?? getStylesForProperty

@@ -159,7 +159,7 @@ describe('styled props', () => {
             [ 'textAlign', '1' ],
             [ 'textAlign', '1' ],
             [ 'color', '1' ],
-            [ 'background', '1' ],
+            [ 'backgroundColor', '1' ],
             [ 'backgroundColor', '1' ],
             [ 'backgroundColor', '1' ],
             [ 'borderColor', '1' ],
@@ -243,7 +243,9 @@ describe('styled props', () => {
             font-family: 'RobotoMono-Regular';
             ${css`
                 height: 1px;
-            `}
+            `};
+            background: green;
+            background: 'yellow';
         `
 
         expect(styled.styles).toStrictEqual([
@@ -254,7 +256,9 @@ describe('styled props', () => {
             ['fontFamily', 'Inter-Bold' ],
             ['fontFamily', 'RobotoMono-Regular'],
             ['fontFamily', 'RobotoMono-Regular'],
-            ['MIXIN_', new Css([['height', 1]])]
+            ['MIXIN_', new Css([['height', 1]])],
+            ['backgroundColor', 'green'],
+            ['backgroundColor', 'yellow'],
         ])
     })
 })

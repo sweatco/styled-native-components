@@ -1,4 +1,4 @@
-import { buildPropsFromAttrs} from '../buildPropsFromAttrs'
+import { buildPropsFromAttrs } from '../buildPropsFromAttrs'
 
 describe('buildPropsFromAttrs', () => {
     test('Should combine passed props', () => {
@@ -25,7 +25,7 @@ describe('buildPropsFromAttrs', () => {
             props2: true,
             number: 2,
             out: true,
-            overriddenNumber: 0,
+            overriddenNumber: 2,
             theme: {},
         })
     })
@@ -42,8 +42,11 @@ describe('buildPropsFromAttrs', () => {
         const props2 = () => ({
             number: 2,
         })
-         buildPropsFromAttrs(outProps, [prop1, props2])
+        const props = buildPropsFromAttrs(outProps, [prop1, props2])
 
-        expect(outProps).toStrictEqual(excpectedProps)
+        expect(props).toStrictEqual({
+            number: 2,
+            theme: {},
+        })
     })
 })

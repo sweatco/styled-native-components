@@ -121,4 +121,50 @@ describe('buildDynamicStyles', () => {
             borderColor: 'black',
         })
     })
+
+    test('Should override styles', () => {
+        const { css } = createStyled()
+        const props = {
+            theme: {},
+        }
+        let styles = buildDynamicStyles(props, [
+            ['height', 2],
+        ])
+
+        expect(styles).toStrictEqual({
+            height: 2,
+        })
+
+        const css1 = css([
+            ['height', 1],
+        ])
+        styles = buildDynamicStyles(props, [
+            ['MIXIN_', css1],
+            ['height', 2],
+        ])
+        expect(styles).toStrictEqual({
+            height: 2,
+        })
+
+        styles = buildDynamicStyles(props, [
+            ['height', 2],
+            ['MIXIN_', css1],
+        ])
+        expect(styles).toStrictEqual({
+            height: 1,
+        })
+
+        const css2 = css([
+            ['height', 4],
+            ['MIXIN_', css1],
+        ])
+
+        styles = buildDynamicStyles(props, [
+            ['height', 20],
+            ['MIXIN_', css2],
+        ])
+        expect(styles).toStrictEqual({
+            height: 1,
+        })
+    })
 })

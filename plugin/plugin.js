@@ -121,20 +121,25 @@ function parseCss(cssText, substitutionMap) {
                 .replace(/\/\/.*(?=\n|$)/g, '') // remove // comments
         )
     }
+    const pattern = new RegExp(`^\\d+\\.${MAGIC_NUMBER}`)
+    function startsWithSubstitution(line) {
+        return pattern.test(line)
+    }
     cssText = removeComments(cssText)
-    const lines = cssText.split('\n')
+    const SEPARATOR = ';'
+    const lines = cssText.split('\n').reduce((acc, line) => acc.concat(line.split(SEPARATOR)), [])
+    const processedLines = []
     let styles = []
     for (let i = 0; i < lines.length; i++) {
         let line = lines[i].trim()
-        if (line.endsWith(';')) {
-            line = line.substring(0, line.length - 1)
+        if (startsWithSubstitution(line) && substitutionMap[line]) {
+            line = `${MIXIN}:${line}`
         }
-        if (substitutionMap[line]) { // mixin
-            styles.push([MIXIN, line])
-            lines[i] = ''
+        if (line) {
+            processedLines.push(line)
         }
     }
-    cssText = lines.join('')
+    cssText = processedLines.join(SEPARATOR)
     const { nodes } = postcss.parse(cssText)
     for (const node of nodes) {
         if (node.type === 'decl') {
@@ -180,7 +185,7 @@ function buildCssObject(identifier, t, substitutions) {
                     const elements = []
                     const expressions = []
                     if (substitutions[value]) {
-                        return substitutions[value]
+                        return inject(substitutions[value])
                     }
                     const matches = splitSubstitution(value)
                     for (const match of matches) {
