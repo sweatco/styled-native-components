@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, useContext, useMemo } from 'react'
+import React, { PropsWithChildren, createElement, useContext, useMemo } from 'react'
 import {
   Button,
   Falsy,
@@ -128,7 +128,7 @@ export function createStyled<Theme extends AnyTheme>() {
   const ThemeContext = React.createContext<Theme>({} as Theme)
 
   function styled<C extends AnyComponent>(Component: C): Styled<C, Theme> {
-    const innerStyled = (styles: StylePair[], attrs: InnerAttrs[] = []) => {
+    function innerStyled(styles: StylePair[], attrs: InnerAttrs[] = []) {
       if (process.env.NODE_ENV !== 'production') {
         if (!Array.isArray(styles)) {
           throw new Error('It seems you forgot to add babel plugin.')
@@ -137,13 +137,12 @@ export function createStyled<Theme extends AnyTheme>() {
           throw new Error('It seems you forgot to add babel plugin.')
         }
       }
-      const { fixed, dynamic } = splitStyles(styles)
-      const fixedStyle = StyleSheet.create({ fixed }).fixed
+      const { fixed: fixedStyle, dynamic } = splitStyles(styles)
 
       // Component
-      const StyledComponent = React.forwardRef((props: UnknownProps & AnyStyleProps & AsComponentProps, ref) => {
+      const StyledComponent = React.forwardRef((props: PropsWithChildren<UnknownProps & AnyStyleProps & AsComponentProps>, ref) => {
         const theme = useContext(ThemeContext)
-        let propsWithTheme: Themed<UnknownProps, Theme> = { ...props, theme }
+        let propsWithTheme: Themed<UnknownProps, Theme> = Object.assign({}, props, { theme })
         propsWithTheme = buildPropsFromAttrs(propsWithTheme, attrs)
         let style: StyleProp<UnknownProps> = fixedStyle
         if (dynamic.length > 0) {
@@ -151,8 +150,9 @@ export function createStyled<Theme extends AnyTheme>() {
           style = StyleSheet.compose(style, dynamicStyle)
         }
         style = StyleSheet.compose(style, props.style)
+        const parsedProps = Object.assign(propsWithTheme, { theme: props.theme, ref, style })
         const CastedComponent = (props.as ?? Component) as AnyComponent
-        return <CastedComponent {...propsWithTheme} theme={props.theme} style={style} ref={ref} />
+        return createElement(CastedComponent, parsedProps)
       })
 
       StyledComponent.displayName = 'StyledComponent'

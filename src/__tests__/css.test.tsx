@@ -8,7 +8,8 @@ describe('styled props', () => {
         const styled = css`
             //comment
             transform: rotate(${'android' === 'android' ? 180 : 0}deg) scale(${1});
-            flex: ${1}; // iniline comment
+            flex: ${2}; // iniline comment
+            flex: 1 0 auto;
             flex-direction: ${'1'};
             flexDirection: ${'1'};
             justify-content: ${'1'};
@@ -104,9 +105,10 @@ describe('styled props', () => {
 
         expect(styled.styles).toStrictEqual([
             [ 'transform', [ { scale: 1 }, { rotate: '180deg' } ] ],
+            [ 'flex', 2 ],
             [ 'flexGrow', 1 ],
-            [ 'flexShrink', 1 ],
-            [ 'flexBasis', 0 ],
+            [ 'flexShrink', 0 ],
+            [ 'flexBasis', 'auto' ],
             [ 'flexDirection', '1' ],
             [ 'flexDirection', '1' ],
             [ 'justifyContent', '1' ],
@@ -119,10 +121,7 @@ describe('styled props', () => {
             [ 'alignContent', '1' ],
             [ 'width', 1 ],
             [ 'height', 1 ],
-            [ 'marginTop', 1 ],
-            [ 'marginRight', 1 ],
-            [ 'marginBottom', 1 ],
-            [ 'marginLeft', 1 ],
+            [ 'margin', 1 ],
             [ 'marginTop', 1 ],
             [ 'marginTop', 1 ],
             [ 'marginBottom', 1 ],
@@ -131,10 +130,7 @@ describe('styled props', () => {
             [ 'marginLeft', 1 ],
             [ 'marginRight', 1 ],
             [ 'marginRight', 1 ],
-            [ 'paddingTop', 1 ],
-            [ 'paddingRight', 1 ],
-            [ 'paddingBottom', 1 ],
-            [ 'paddingLeft', 1 ],
+            [ 'padding', 1 ],
             [ 'paddingTop', 1 ],
             [ 'paddingTop', 1 ],
             [ 'paddingBottom', 1 ],
@@ -165,22 +161,10 @@ describe('styled props', () => {
             [ 'backgroundColor', '1' ],
             [ 'borderColor', '1' ],
             [ 'borderColor', '1' ],
-            [ 'borderTopWidth', 1 ],
-            [ 'borderRightWidth', 1 ],
-            [ 'borderBottomWidth', 1 ],
-            [ 'borderLeftWidth', 1 ],
-            [ 'borderTopWidth', 1 ],
-            [ 'borderRightWidth', 1 ],
-            [ 'borderBottomWidth', 1 ],
-            [ 'borderLeftWidth', 1 ],
-            [ 'borderTopLeftRadius', 1 ],
-            [ 'borderTopRightRadius', 1 ],
-            [ 'borderBottomRightRadius', 1 ],
-            [ 'borderBottomLeftRadius', 1 ],
-            [ 'borderTopLeftRadius', 1 ],
-            [ 'borderTopRightRadius', 1 ],
-            [ 'borderBottomRightRadius', 1 ],
-            [ 'borderBottomLeftRadius', 1 ],
+            [ 'borderWidth', 1 ],
+            [ 'borderWidth', 1 ],
+            [ 'borderRadius', 1 ],
+            [ 'borderRadius', 1 ],
             [ 'opacity', 1 ],
             [ 'resizeMode', '1' ],
             [ 'resizeMode', '1' ],

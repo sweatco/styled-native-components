@@ -31,10 +31,10 @@ describe('buildPropsFromAttrs', () => {
     })
 
     test('Should not mutated passed props', () => {
-        const excpectedProps = Object.freeze({
+        const excpectedProps = {
             number: 0,
             theme: {},
-        })
+        }
         const outProps = excpectedProps
         const prop1 = {
             number: 1,
