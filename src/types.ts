@@ -1,4 +1,5 @@
 import React, { ComponentPropsWithRef, ForwardRefExoticComponent } from 'react'
+import { Parser } from './parsers'
 
 export type AnyComponent<P extends object = any> = React.ComponentType<P>
 
@@ -32,6 +33,7 @@ export type Interpolation<Props extends object> =
   | RuleSet<Props>
   | Array<Interpolation<Props>>
   | Css
+  | Parser
 
 export type Styles<Props extends object> = TemplateStringsArray | Interpolation<Props>
 
@@ -66,8 +68,9 @@ export interface Styled<
 export type DynamicStyleFn = (props: Themed<UnknownProps, AnyTheme>) => unknown
 
 export class Css {
-  constructor(public styles: StylePair[] | Css | null | undefined | false) {}
+  constructor(public parsers: Parser[]) {}
 }
 
 export type UnknownProps = Record<string, unknown>
-export type InnerAttrs = UnknownProps | ((props: Themed<UnknownProps, AnyTheme>) => UnknownProps)
+export type UnknownStyles = Record<string, unknown>
+export type InnerAttrs = (props: Themed<UnknownProps, AnyTheme>) => UnknownProps

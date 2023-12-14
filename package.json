@@ -6,6 +6,9 @@
   "author": "Ivan Kuchaev",
   "license": "MIT",
   "private": true,
+  "scripts": {
+    "test": "yarn jest --clearCache && yarn jest"
+  },
   "dependencies": {
     "css-to-react-native": "^3.2.0"
   },

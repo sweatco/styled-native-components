@@ -1,5 +1,4 @@
-import { MIXIN, RUNTIME } from '../../constants'
-import { maybeDynamic } from '../maybeDynamic'
+import { style, maybeDynamic, mixin, runtime } from '../parsers'
 import { buildDynamicStyles, createStyled } from '../styled'
 
 
@@ -11,53 +10,53 @@ describe('buildDynamicStyles', () => {
             theme: {},
         })
         const mixin1 = css([
-            ['mixin1number', 1],
-            ['mixin1string', 'mixin1string'],
-            // @ts-expect-error
-            ['mixin1boolean', true],
-            ['mixin1array', [{ scale: 2 }]],
-            ['mixin1object', { scale: 2 }],
-            // @ts-expect-error
-            ['mixin1maybeDynamicNumber', maybeDynamic((arg) => arg, 1)],
-            // @ts-expect-error
-            ['mixin1dynamic', maybeDynamic((arg) => arg, (props) => props)],
-            [MIXIN, css([
-                ['mixin2number', 2],
-                ['mixin2string', 'mixin2string'],
-                // @ts-expect-error
-                ['mixin2boolean', true],
-                ['mixin2array', [{ scale: 3 }]],
-                ['mixin2object', { scale: 3 }],
-                // @ts-expect-error
-                ['mixin2maybeDynamicNumber', maybeDynamic((arg) => arg, 2)],
-                // @ts-expect-error
-                ['mixin2dynamic', maybeDynamic((arg) => arg, (props) => props)],
-            ])],
-            [MIXIN, () => css([
-                ['mixin3number', 3],
-            ])],
-            // @ts-expect-error
-            [MIXIN, css.maybeDynamic(
-                (arg) => arg,
+            style('mixin1number', 1),
+            style('mixin1string', 'mixin1string'),
+            style('mixin1boolean', true),
+            style('mixin1array', [{ scale: 2 }]),
+            style('mixin1object', { scale: 2 }),
+            style('mixin1maybeDynamicNumber', maybeDynamic(([arg]) => arg, [1])),
+            style('mixin1dynamic', maybeDynamic(([arg]) => arg, [(props) => props])),
+            mixin(
                 css([
-                    // @ts-expect-error
-                    ['mixin4number', maybeDynamic((arg) => arg, 4)],
+                    style('mixin2number', 2),
+                    style('mixin2string', 'mixin2string'),
+                    style('mixin2boolean', true),
+                    style('mixin2array', [{ scale: 3 }]),
+                    style('mixin2object', { scale: 3 }),
+                    style('mixin2maybeDynamicNumber', maybeDynamic(([arg]) => arg, [2])),
+                    style('mixin2dynamic', maybeDynamic(([arg]) => arg, [(props) => props])),
+                ]),
+            ),
+            mixin(css([
+                    style('mixin3number', 3),
                 ])
-            )]
+            ),
+            mixin(
+                maybeDynamic(
+                    ([arg]) => arg,
+                    [css([
+                        style('mixin4number', maybeDynamic(([arg]) => arg, [4])),
+                    ])]
+                )
+            )
         ])
-        const styles = buildDynamicStyles(props, [
-            ['number', () => 1],
-            ['string', () => 'string'],
-            ['fromProps', (props) => props],
-            ['object', () => ({})],
-            ['array', () => ([])],
-            ['simpleObject', {}],
-            ['simpleArray', []],
-            [MIXIN, () => mixin1],
-            [MIXIN, () => null],
-            [MIXIN, () => undefined],
-            [MIXIN, () => false],
-        ])
+        const styles = {}
+        buildDynamicStyles(props, [
+                style('number', 1),
+                style('string', 'string'),
+                style('fromProps', maybeDynamic(([arg]) => arg, [(props) => props])),
+                style('object', maybeDynamic(([arg]) => arg, [() => ({})])),
+                style('array', maybeDynamic(([arg]) => arg, [() => ([])])),
+                style('simpleObject', {}),
+                style('simpleArray', []),
+                mixin(maybeDynamic(([arg]) => arg, [() => mixin1])),
+                mixin(maybeDynamic(([arg]) => arg, [() => null])),
+                mixin(maybeDynamic(([arg]) => arg, [() => undefined])),
+                mixin(maybeDynamic(([arg]) => arg, [() => false])),
+            ],
+        styles
+        )
 
         expect(styles).toStrictEqual({
             number: 1,
@@ -73,8 +72,8 @@ describe('buildDynamicStyles', () => {
             mixin1array: [{ scale: 2 }],
             mixin1object: { scale: 2 },
             mixin1maybeDynamicNumber: 1,
-            mixin2number: 2,
             mixin1dynamic: props,
+            mixin2number: 2,
             mixin2string: 'mixin2string',
             mixin2boolean: true,
             mixin2array: [{ scale: 3 }],
@@ -87,13 +86,12 @@ describe('buildDynamicStyles', () => {
     })
 
     test('Should parse runtime styles', () => {
-        const { css } = createStyled()
         const props = Object.freeze({
             isInitalProps: true,
             theme: {},
         })
         let styles = buildDynamicStyles(props, [
-            [RUNTIME, ['border', '2px solid white']],
+            runtime('border', '2px solid white'),
         ])
 
         expect(styles).toStrictEqual({
@@ -103,7 +101,9 @@ describe('buildDynamicStyles', () => {
         })
 
         styles = buildDynamicStyles(props, [
-            [RUNTIME, maybeDynamic((...args) => ['border', `${args[0]} ${args[1]} ${args[2]}`], '3px', 'dashed', 'yellow')],
+            runtime('border',
+                maybeDynamic((args) => `${args[0]} ${args[1]} ${args[2]}`, ['3px', 'dashed', 'yellow'])
+            ),
         ])
 
         expect(styles).toStrictEqual({
@@ -113,7 +113,10 @@ describe('buildDynamicStyles', () => {
         })
 
         styles = buildDynamicStyles(props, [
-            [RUNTIME, maybeDynamic((...args) => ['border', `${args[0]}`], () => '4px')],
+            runtime(
+                'border',
+                maybeDynamic((args) => `${args[0]}`, [() => '4px']),
+            ),
         ])
 
         expect(styles).toStrictEqual({
@@ -129,7 +132,7 @@ describe('buildDynamicStyles', () => {
             theme: {},
         }
         let styles = buildDynamicStyles(props, [
-            ['height', 2],
+            style('height', 2),
         ])
 
         expect(styles).toStrictEqual({
@@ -137,32 +140,32 @@ describe('buildDynamicStyles', () => {
         })
 
         const css1 = css([
-            ['height', 1],
+            style('height', 1),
         ])
         styles = buildDynamicStyles(props, [
-            [MIXIN, css1],
-            ['height', 2],
+            mixin(css1),
+            style('height', 2),
         ])
         expect(styles).toStrictEqual({
             height: 2,
         })
 
         styles = buildDynamicStyles(props, [
-            ['height', 2],
-            [MIXIN, css1],
+            style('height', 2),
+            mixin(css1),
         ])
         expect(styles).toStrictEqual({
             height: 1,
         })
 
         const css2 = css([
-            ['height', 4],
-            [MIXIN, css1],
+            style('height', 4),
+            mixin(css1),
         ])
 
         styles = buildDynamicStyles(props, [
-            ['height', 20],
-            [MIXIN, css2],
+            style('height', 20),
+            mixin(css2),
         ])
         expect(styles).toStrictEqual({
             height: 1,

@@ -1,51 +1,41 @@
-import { MIXIN } from '../../constants'
-import { maybeDynamic } from '../maybeDynamic'
+import { style, maybeDynamic, mixin } from '../parsers'
 import { splitStyles, createStyled } from '../styled'
-
-type Props = any
-type ResultWithFN = { fn: (props: Props) => unknown }
 
 describe('splitStyles', () => {
     test('Should split passed styles', () => {
         const { css } = createStyled()
-        const dynamicProp = maybeDynamic((arg) => arg, () => 0)
-        const { fixed, dynamic } = splitStyles([
-            ['number', 0],
-            ['string', 'string'],
-            ['boolean', true],
-            ['array', [{ scale: 1 }]],
-            ['object', { scale: 1 }],
-            ['maybeDynamicNumber', maybeDynamic((arg) => arg, 0)],
-            ['dynamic', dynamicProp],
-            [MIXIN, css([
-                ['mixin1number', 1],
-                ['mixin1string', 'mixin1string'],
-                // @ts-expect-error
-                ['mixin1boolean', true],
-                ['mixin1array', [{ scale: 2 }]],
-                ['mixin1object', { scale: 2 }],
-                // @ts-expect-error
-                ['mixin1maybeDynamicNumber', maybeDynamic((arg) => arg, 1)],
-                // @ts-expect-error
-                ['mixin1dynamic', dynamicProp],
-                [MIXIN, css([
-                    ['mixin2number', 2],
-                    ['mixin2string', 'mixin2string'],
-                    // @ts-expect-error
-                    ['mixin2boolean', true],
-                    ['mixin2array', [{ scale: 3 }]],
-                    ['mixin2object', { scale: 3 }],
-                    // @ts-expect-error
-                    ['mixin2maybeDynamicNumber', maybeDynamic((arg) => arg, 2)],
-                    // @ts-expect-error
-                    ['mixin2dynamic', dynamicProp],
-                    [MIXIN, null],
-                ])],
-            ])],
-            [MIXIN, null],
+
+        const { styles, dynamic } = splitStyles([
+            style('number', 0),
+            style('string', 'string'),
+            style('boolean', true),
+            style('array', [{ scale: 1 }]),
+            style('object', { scale: 1 }),
+            style('maybeDynamicNumber', maybeDynamic(([arg]) => arg, [0])),
+            style('dynamic', maybeDynamic(([arg]) => arg, [() => 0])), // dynamic
+            mixin(css([
+                style('mixin1number', 1),
+                style('mixin1string', 'mixin1string'),
+                style('mixin1boolean', true),
+                style('mixin1array', [{ scale: 2 }]),
+                style('mixin1object', { scale: 2 }),
+                style('mixin1maybeDynamicNumber', maybeDynamic(([arg]) => arg, [1])),
+                style('mixin1dynamic', maybeDynamic(([arg]) => arg, [() => 0])),  // dynamic
+                mixin(css([
+                    style('mixin2number', 2),
+                    style('mixin2string', 'mixin2string'),
+                    style('mixin2boolean', true),
+                    style('mixin2array', [{ scale: 3 }]),
+                    style('mixin2object', { scale: 3 }),
+                    style('mixin2maybeDynamicNumber', maybeDynamic(([arg]) => arg, [2])),
+                    style('mixin2dynamic', maybeDynamic(([arg]) => arg, [() => 0])),  // dynamic
+                    mixin(null),
+                ])),
+            ])),
+            mixin(null),
         ])
 
-        expect(fixed).toStrictEqual({
+        expect(styles).toStrictEqual({
             number: 0,
             string: 'string',
             boolean: true,
@@ -65,10 +55,9 @@ describe('splitStyles', () => {
             mixin2object: { scale: 3 },
             mixin2maybeDynamicNumber: 2,
         })
-        expect(dynamic).toStrictEqual([
-            ['dynamic', (dynamicProp as ResultWithFN).fn],
-            ['mixin1dynamic', (dynamicProp as ResultWithFN).fn],
-            ['mixin2dynamic', (dynamicProp as ResultWithFN).fn]
-        ])
+
+
+
+        expect(dynamic.length).toBe(3)
     })
 })

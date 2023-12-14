@@ -5,12 +5,12 @@ const {
 } = require('@babel/types')
 const postcss = require('postcss')
 const { transform } = require('./transform')
-const { MIXIN } = require('../constants')
+const { MIXIN, RUNTIME } = require('./constants')
 
 const STYLED = 'styled'
 const CSS = 'css'
 const MAGIC_NUMBER = 123456789
-const REGEX = new RegExp(`(\\d+\\.${MAGIC_NUMBER})`, 'g')
+const SUBSTITUTION_REGEX = new RegExp(`(\\d+\\.${MAGIC_NUMBER})`, 'g')
 function kebabToCamel(str) {
     return str.replace(/-./g, match => match.charAt(1).toUpperCase());
 }
@@ -153,21 +153,44 @@ function parseCss(cssText, substitutionMap) {
 }
 
 function buildCssObject(identifier, t, substitutions) {
-    function maybeDynamic(fn, args) {
+    function maybeDynamic(value, args) {
         return t.callExpression(
             t.memberExpression(
                 t.identifier(identifier),
                 t.identifier('maybeDynamic')
             ),
-            [fn].concat(args)
+            [value, t.arrayExpression(args)]
+        )
+    }
+    function style(key, value) {
+        return t.callExpression(
+            t.memberExpression(
+                t.identifier(identifier),
+                t.identifier('style')
+            ),
+            [key, value]
+        )
+    }
+    function runtime(key, value) {
+        return t.callExpression(
+            t.memberExpression(
+                t.identifier(identifier),
+                t.identifier('runtime')
+            ),
+            [key, value]
+        )
+    }
+    function mixin(value) {
+        return t.callExpression(
+            t.memberExpression(
+                t.identifier(identifier),
+                t.identifier('mixin')
+            ),
+            [value]
         )
     }
     function caller(args) {
-        return t.functionExpression(null, [], t.blockStatement([t.returnStatement(args)]))
-    }
-
-    function splitSubstitution(str) {  
-        return str.split(REGEX)
+        return t.functionExpression(null, [t.identifier('args')], t.blockStatement([t.returnStatement(args)]))
     }
 
     function isSubstitution(value) {
@@ -177,7 +200,7 @@ function buildCssObject(identifier, t, substitutions) {
     function travers(context) {
         function inject(substitution) {
             context.push(substitution)
-            return t.memberExpression(t.identifier('arguments'), t.numericLiteral(context.length - 1), true)
+            return t.memberExpression(t.identifier('args'), t.numericLiteral(context.length - 1), true)
         }
         const literals = {
             string(value) {
@@ -187,7 +210,7 @@ function buildCssObject(identifier, t, substitutions) {
                     if (substitutions[value]) {
                         return inject(substitutions[value])
                     }
-                    const matches = splitSubstitution(value)
+                    const matches = value.split(SUBSTITUTION_REGEX)
                     for (const match of matches) {
                         const substitution = substitutions[match]
                         if (substitution) {
@@ -233,17 +256,27 @@ function buildCssObject(identifier, t, substitutions) {
     }
 
     return (node) => {
-        const values = []
-        for (const [key, value] of node) {
-            const args = []
+        const styles = []
+        const buildExpression = (value, args) => {
             const mapper = travers(args)
-            let expression = mapper(value)
+            const expression = mapper(value)
             if (args.length) {
-                expression = maybeDynamic(caller(expression), args)
+                return maybeDynamic(caller(expression), args)
             }
-            values.push(t.arrayExpression([t.stringLiteral(key), expression]))
+
+            return expression
+        }
+        for (let [key, value] of node) {
+            const args = []
+            if (key === RUNTIME) {
+                styles.push(runtime(t.stringLiteral(value[0]), buildExpression(value[1], args)))
+            } else if (key === MIXIN) {
+                styles.push(mixin(buildExpression(value, args)))
+            } else {
+                styles.push(style(t.stringLiteral(key), buildExpression(value, args)))
+            }
         }
 
-        return t.arrayExpression(values)
+        return t.arrayExpression(styles)
     }
 }

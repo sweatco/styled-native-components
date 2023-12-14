@@ -1,7 +1,6 @@
-import React, { PropsWithChildren, createElement, useContext, useMemo } from 'react'
+import React, { PropsWithChildren, createElement, useContext } from 'react'
 import {
   Button,
-  Falsy,
   FlatList,
   Image,
   ImageBackground,
@@ -13,7 +12,6 @@ import {
   ScrollView,
   SectionList,
   StyleProp,
-  StyleSheet,
   Text,
   TextInput,
   TouchableHighlight,
@@ -22,134 +20,84 @@ import {
   View,
   VirtualizedList,
 } from 'react-native'
-import { getStylesForProperty } from 'css-to-react-native'
 import {
   AnyComponent,
   AnyTheme,
   BaseObject,
   InnerAttrs,
   Interpolation,
-  StylePair,
   Styled,
   Styles,
   Themed,
   UnknownProps,
   AsComponentProps,
-  DynamicStyleFn,
   Css,
+  UnknownStyles,
 } from './types'
-import { isDynamic, maybeDynamic } from './maybeDynamic'
-import { getResult } from './getResult'
 import { buildPropsFromAttrs } from './buildPropsFromAttrs'
-import { MIXIN, RUNTIME } from '../constants'
+import { Parser, maybeDynamic, runtime, style, mixin, Queue } from './parsers'
+import { createTheme } from './theme'
 
-function runtimeParse(acc: UnknownProps, style: unknown) {
-  const [key, value] = style as [string, string]
-  const styles = getStylesForProperty(key, value)
-  const keys = Object.keys(styles)
+export function splitStyles(parsers: Parser[]) {
+  const styles: UnknownStyles = {}
+  const dynamic: Queue = []
 
-  for (const key of keys) {
-    acc[key] = styles[key]
-  }
-}
-
-const isCss = (obj: any): obj is Css => obj instanceof Css
-const isMixinKey = (key: string) => key === MIXIN
-const isRuntimeKey = (key: string) => key === RUNTIME
-
-interface SplitStylesResult {
-  fixed: UnknownProps
-  dynamic: Array<[string, DynamicStyleFn | StylePair]>
-}
-
-export function splitStyles(styles: StylePair[] | Css | Falsy | unknown, result: SplitStylesResult = { fixed: {}, dynamic: [] }) {
-  const { fixed, dynamic } = result
-  if (isCss(styles)) {
-    return splitStyles(styles.styles, result)
-  }
-  if (!Array.isArray(styles)) {
-    return result
-  }
-  for (const [key, style] of styles) {
-    if (isDynamic(style)) {
-      dynamic.push([key, style.fn])
-    } else if (isMixinKey(key)) {
-      splitStyles(style, result)
-    } else if (isCss(style)) {
-      splitStyles(style.styles, result)
-    } else if (isRuntimeKey(key)) {
-      runtimeParse(fixed, style)
-    } else {
-      fixed[key] = style
-    }
+  for (const parser of parsers) {
+    parser(styles, dynamic, {})
   }
 
-  return result
+  return { styles, dynamic }
 }
 
 export function buildDynamicStyles(
   props: Themed<UnknownProps, AnyTheme>,
-  dynamic: Array<[string, DynamicStyleFn | StylePair[]]> | Css | Falsy | StylePair[],
-  acc: UnknownProps = {}
+  queue: Queue,
+  styles: UnknownStyles = {}
 ) {
-  if (!dynamic) {
-    return acc
+  const initial: Queue = []
+  queue = initial.concat(queue)
+  for (const parser of queue) {
+    parser(styles, queue, props)
   }
-  if (isCss(dynamic)) {
-    return buildDynamicStyles(props, dynamic.styles, acc)
-  }
-  for (const [key, fnOrResult] of dynamic) {
-    let result = getResult(props, fnOrResult)
-    if (isMixinKey(key)) {
-      if (isCss(result)) {
-        const mixinResult = result.styles
-        mixinResult && buildDynamicStyles(props, mixinResult, acc)
-      } else {
-        buildDynamicStyles(props, result, acc)
-      }
-    } else {
-      result = isDynamic(result) ? result.fn(props) : result
-    
-      if (isRuntimeKey(key)) {
-        runtimeParse(acc, result)
-      } else {
-        acc[key] = result
-      }
-    }
-  }
-  return acc
+  return styles
 }
 
 interface AnyStyleProps {
-  style: any
+  style?: UnknownStyles
+}
+
+const methods = {
+  style,
+  maybeDynamic,
+  runtime,
+  mixin,
 }
 
 export function createStyled<Theme extends AnyTheme>() {
-  const ThemeContext = React.createContext<Theme>({} as Theme)
+  const { ThemeContext, ThemeProvider } = createTheme<Theme>()
 
   function styled<C extends AnyComponent>(Component: C): Styled<C, Theme> {
-    function innerStyled(styles: StylePair[], attrs: InnerAttrs[] = []) {
+    function innerStyled(parsers: Parser[], attrs: InnerAttrs[] = []) {
       if (process.env.NODE_ENV !== 'production') {
-        if (!Array.isArray(styles)) {
-          throw new Error('It seems you forgot to add babel plugin.')
-        }
-        if (styles.length && !Array.isArray(styles[0])) {
+        if (!Array.isArray(parsers)) {
           throw new Error('It seems you forgot to add babel plugin.')
         }
       }
-      const { fixed: fixedStyle, dynamic } = splitStyles(styles)
+      const { styles: fixedStyle, dynamic } = splitStyles(parsers)
 
       // Component
       const StyledComponent = React.forwardRef((props: PropsWithChildren<UnknownProps & AnyStyleProps & AsComponentProps>, ref) => {
         const theme = useContext(ThemeContext)
         let propsWithTheme: Themed<UnknownProps, Theme> = Object.assign({}, props, { theme })
         propsWithTheme = buildPropsFromAttrs(propsWithTheme, attrs)
-        let style: StyleProp<UnknownProps> = fixedStyle
+        let style: StyleProp<UnknownStyles> = fixedStyle
         if (dynamic.length > 0) {
-          const dynamicStyle = buildDynamicStyles(propsWithTheme, dynamic)
-          style = StyleSheet.compose(style, dynamicStyle)
+          style = Object.assign({}, style)
+          style = buildDynamicStyles(propsWithTheme, dynamic, style)
         }
-        style = StyleSheet.compose(style, props.style)
+        if (props.style) {
+          style = [style, props.style]
+        }
         const parsedProps = Object.assign(propsWithTheme, { theme: props.theme, ref, style })
         const CastedComponent = (props.as ?? Component) as AnyComponent
         return createElement(CastedComponent, parsedProps)
@@ -159,8 +107,9 @@ export function createStyled<Theme extends AnyTheme>() {
 
       return StyledComponent
     }
-    const attrs = (styled: typeof innerStyled) => (attrsOrAttrsFn: InnerAttrs) => {
-      const styledWithAttrs = (styles: StylePair[], attrs: InnerAttrs[] = []) => styled(styles, [attrsOrAttrsFn].concat(attrs))
+    const attrs = (styled: typeof innerStyled) => (attrsOrAttrsFn: UnknownProps | ((props: Themed<UnknownProps, AnyTheme>) => UnknownProps)) => {
+      const attrsFn = typeof attrsOrAttrsFn !== 'function' ? () => attrsOrAttrsFn : attrsOrAttrsFn
+      const styledWithAttrs = (styles: Parser[], attrs: InnerAttrs[] = []) => styled(styles, [attrsFn].concat(attrs))
       styledWithAttrs.attrs = attrs(styledWithAttrs)
 
       return styledWithAttrs
@@ -190,23 +139,18 @@ export function createStyled<Theme extends AnyTheme>() {
   styled.TouchableWithoutFeedback = styled(TouchableWithoutFeedback)
   styled.ImageBackground = styled(ImageBackground)
 
-  styled.maybeDynamic = maybeDynamic
-
   // It is expected that _styles and _interpolations are transformed to an Array<Array> type during Babel transpilation.
   function css<Props extends object = BaseObject>(
-    _styles: Styles<Themed<Props, Theme>>,
+    _styles: Styles<Themed<Props, Theme>> | Parser[],
     ..._interpolations: Array<Interpolation<Themed<Props, Theme>>>
   ) {
     // eslint-disable-next-line prefer-rest-params
     return new Css(arguments[0])
   }
 
-  css.maybeDynamic = maybeDynamic
-
-  const ThemeProvider = ({ theme, children }: PropsWithChildren<{ theme: Theme }>) => {
-    const parentTheme = useContext(ThemeContext)
-    const combinedTheme = useMemo(() => ({ ...parentTheme, ...theme }), [parentTheme, theme])
-    return <ThemeContext.Provider value={combinedTheme}>{children}</ThemeContext.Provider>
+  for (const key of Object.keys(methods)) {
+    styled[key] = methods[key]
+    css[key] = methods[key]
   }
 
   return { styled, ThemeProvider, ThemeContext, css }

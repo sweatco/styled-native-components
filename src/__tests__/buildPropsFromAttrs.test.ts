@@ -7,11 +7,11 @@ describe('buildPropsFromAttrs', () => {
             overriddenNumber: 0,
             theme: {},
         }
-        const prop1 = {
+        const prop1 = () => ({
             number: 1,
             props1: true,
             overriddenNumber: 1,
-        }
+        })
         const props2 = (props) => ({
             number: props.number + 1,
             overriddenNumber: props.overriddenNumber + 1,
@@ -36,9 +36,9 @@ describe('buildPropsFromAttrs', () => {
             theme: {},
         }
         const outProps = excpectedProps
-        const prop1 = {
+        const prop1 = () => ({
             number: 1,
-        }
+        })
         const props2 = () => ({
             number: 2,
         })

@@ -1,5 +1,5 @@
 const { getStylesForProperty } = require('css-to-react-native')
-const { MIXIN, RUNTIME } = require('../constants')
+const { MIXIN, RUNTIME } = require('./constants')
 
 const colorKeys = [
     'background',
