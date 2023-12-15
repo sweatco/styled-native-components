@@ -33,7 +33,6 @@ export type Interpolation<Props extends object> =
   | RuleSet<Props>
   | Array<Interpolation<Props>>
   | Css
-  | Parser
 
 export type Styles<Props extends object> = TemplateStringsArray | Interpolation<Props>
 

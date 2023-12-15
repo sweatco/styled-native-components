@@ -38,6 +38,10 @@ import { buildPropsFromAttrs } from './buildPropsFromAttrs'
 import { Parser, maybeDynamic, runtime, style, mixin, Queue } from './parsers'
 import { createTheme } from './theme'
 
+/**
+ * We call it outside of the Components to separate fixed styles and build a queue of dynamically parsed styles
+ * that will be invoked during the rendering phase.
+ */
 export function splitStyles(parsers: Parser[]) {
   const styles: UnknownStyles = {}
   const dynamic: Queue = []
@@ -107,12 +111,13 @@ export function createStyled<Theme extends AnyTheme>() {
 
       return StyledComponent
     }
-    const attrs = (styled: typeof innerStyled) => (attrsOrAttrsFn: UnknownProps | ((props: Themed<UnknownProps, AnyTheme>) => UnknownProps)) => {
-      const attrsFn = typeof attrsOrAttrsFn !== 'function' ? () => attrsOrAttrsFn : attrsOrAttrsFn
-      const styledWithAttrs = (styles: Parser[], attrs: InnerAttrs[] = []) => styled(styles, [attrsFn].concat(attrs))
-      styledWithAttrs.attrs = attrs(styledWithAttrs)
+    const attrs = (styled: typeof innerStyled) =>
+      (attrsOrAttrsFn: UnknownProps | ((props: Themed<UnknownProps, AnyTheme>) => UnknownProps)) => {
+        const attrsFn = typeof attrsOrAttrsFn !== 'function' ? () => attrsOrAttrsFn : attrsOrAttrsFn
+        const styledWithAttrs = (styles: Parser[], attrs: InnerAttrs[] = []) => styled(styles, [attrsFn].concat(attrs))
+        styledWithAttrs.attrs = attrs(styledWithAttrs)
 
-      return styledWithAttrs
+        return styledWithAttrs
     }
     innerStyled.attrs = attrs(innerStyled)
     // We use as unknown as Type constraction here becasue
@@ -139,7 +144,7 @@ export function createStyled<Theme extends AnyTheme>() {
   styled.TouchableWithoutFeedback = styled(TouchableWithoutFeedback)
   styled.ImageBackground = styled(ImageBackground)
 
-  // It is expected that _styles and _interpolations are transformed to an Array<Array> type during Babel transpilation.
+  // It is expected that _styles and _interpolations are transformed to an Array<Function> type during Babel transpilation.
   function css<Props extends object = BaseObject>(
     _styles: Styles<Themed<Props, Theme>> | Parser[],
     ..._interpolations: Array<Interpolation<Themed<Props, Theme>>>
@@ -148,9 +153,9 @@ export function createStyled<Theme extends AnyTheme>() {
     return new Css(arguments[0])
   }
 
-  for (const key of Object.keys(methods)) {
-    styled[key] = methods[key]
-    css[key] = methods[key]
+  for (const method of Object.keys(methods)) {
+    styled[method] = methods[method]
+    css[method] = methods[method]
   }
 
   return { styled, ThemeProvider, ThemeContext, css }

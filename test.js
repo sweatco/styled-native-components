@@ -1,1 +1,0 @@
-var styles;styled=css([css.style("flexGrow",1),css.style("flexShrink",0),css.style("flexBasis","auto"),css.runtime("border",css.maybeDynamic(function(args){return args[0]+"px solid "+args[1];},[1,'white']))]);
