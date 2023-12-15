@@ -1,6 +1,6 @@
 # styled-native-components
 
-Enjoy the beauty of the `styled-components`` API with the performance of `StyleSheet``. The aim of this project is to use the API of the `styled-components`` library while shifting work from runtime to compile time and launch time.
+Enjoy the beauty of the `styled-components` API with the performance of `StyleSheet`. The aim of this project is to use the API of the `styled-components`` library while shifting work from runtime to compile time and launch time.
 
 ## Usage
 1. Add `styled-native-components/plugin` to your Babel configuration.
@@ -17,7 +17,7 @@ const { styled, css, ThemeProvider, ThemeContext } = createStyled<CustomTheme>()
 ```
 3. Wrap your root component in `ThemeProvider`.
 
-4. Write your components using the `styled`` instance.
+4. Write your components using the `styled` instance.
 
 
 ## Under the Hood
