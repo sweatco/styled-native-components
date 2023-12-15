@@ -1,6 +1,6 @@
 # styled-native-components
 
-Enjoy the beauty of the `styled-components` API with the performance of `StyleSheet`. The aim of this project is to use the API of the `styled-components`` library while shifting work from runtime to compile time and launch time.
+Enjoy the beauty of the `styled-components` API with the performance of `StyleSheet`. The aim of this project is to use the API of the `styled-components` library while shifting work from runtime to compile time and launch time.
 
 ## Usage
 1. Add `styled-native-components/plugin` to your Babel configuration.
@@ -42,8 +42,8 @@ const Component = styled.View`
 after:
 ```typescript
 const Component = styled.View([
-    styled('height', 1),
-    styled('padding', 1),
+    styled.style('height', 1),
+    styled.style('padding', 1),
 ])
 ```
 -----
