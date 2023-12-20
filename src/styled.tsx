@@ -70,6 +70,15 @@ interface AnyStyleProps {
   style?: UnknownStyles
 }
 
+type StyledComponent = React.ForwardRefExoticComponent<Omit<React.PropsWithChildren<UnknownProps & AnyStyleProps & AsComponentProps>, "ref"> & React.RefAttributes<unknown>> & {
+  isStyled?: boolean
+  parsers: Parser[]
+  attrs: InnerAttrs[]
+  origin: AnyComponent
+}
+
+const isStyledComponent = (component: AnyComponent): component is StyledComponent => !!(component as StyledComponent)?.isStyled
+
 const methods = {
   style,
   maybeDynamic,
@@ -87,27 +96,36 @@ export function createStyled<Theme extends AnyTheme>() {
           throw new Error('It seems you forgot to add babel plugin.')
         }
       }
+      parsers = isStyledComponent(Component) ? [...Component.parsers, ...parsers] : parsers
+      attrs = isStyledComponent(Component) ? [...Component.attrs, ...attrs] : attrs
+      const origin = isStyledComponent(Component) ? Component.origin : Component
       const { styles: fixedStyle, dynamic } = splitStyles(parsers)
 
       // Component
       const StyledComponent = React.forwardRef((props: PropsWithChildren<UnknownProps & AnyStyleProps & AsComponentProps>, ref) => {
         const theme = useContext(ThemeContext)
-        let propsWithTheme: Themed<UnknownProps, Theme> = Object.assign({}, props, { theme })
-        propsWithTheme = buildPropsFromAttrs(propsWithTheme, attrs)
         let style: StyleProp<UnknownStyles> = fixedStyle
+        let propsForElement: Themed<UnknownProps, Theme> = Object.assign({}, props, { theme })
+        if (attrs.length > 0) {
+          propsForElement = buildPropsFromAttrs(propsForElement, attrs)
+        }
         if (dynamic.length > 0) {
           style = Object.assign({}, style)
-          style = buildDynamicStyles(propsWithTheme, dynamic, style)
+          style = buildDynamicStyles(propsForElement, dynamic, style)
         }
         if (props.style) {
           style = [style, props.style]
         }
-        const parsedProps = Object.assign(propsWithTheme, { theme: props.theme, ref, style })
-        const CastedComponent = (props.as ?? Component) as AnyComponent
+        const parsedProps = Object.assign(propsForElement, { theme: props.theme, ref, style })
+        const CastedComponent = (props.as ?? origin) as AnyComponent
         return createElement(CastedComponent, parsedProps)
-      })
+      }) as StyledComponent
 
       StyledComponent.displayName = 'StyledComponent'
+      StyledComponent.isStyled = true
+      StyledComponent.parsers = parsers
+      StyledComponent.attrs = attrs
+      StyledComponent.origin = origin
 
       return StyledComponent
     }
