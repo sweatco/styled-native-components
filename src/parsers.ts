@@ -2,8 +2,6 @@ import { getStylesForProperty } from 'css-to-react-native'
 import { Css, UnknownProps, UnknownStyles } from './types'
 import { Falsy } from 'react-native'
 
-const functionKey = 'function'
-
 const isFunction = (fn: any): fn is Function => typeof fn === 'function'
 
 export type Parser = (styles: UnknownStyles, queue: Queue, props: UnknownProps) => void

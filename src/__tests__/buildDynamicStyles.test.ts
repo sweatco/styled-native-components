@@ -25,7 +25,7 @@ describe('buildDynamicStyles', () => {
                     style('mixin2array', [{ scale: 3 }]),
                     style('mixin2object', { scale: 3 }),
                     style('mixin2maybeDynamicNumber', maybeDynamic(([arg]) => arg, [2])),
-                    style('mixin2dynamic', maybeDynamic(([arg]) => arg, [(prop: unknown) => props])),
+                    style('mixin2dynamic', maybeDynamic(([arg]) => arg, [(props: unknown) => props])),
                 ]),
             ),
             mixin(css([
