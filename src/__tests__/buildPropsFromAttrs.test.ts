@@ -12,7 +12,7 @@ describe('buildPropsFromAttrs', () => {
             props1: true,
             overriddenNumber: 1,
         })
-        const props2 = (props) => ({
+        const props2 = (props: any) => ({
             number: props.number + 1,
             overriddenNumber: props.overriddenNumber + 1,
             props2: true,

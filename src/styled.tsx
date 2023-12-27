@@ -132,6 +132,7 @@ export function createStyled<Theme extends AnyTheme>() {
     const attrs = (styled: typeof innerStyled) =>
       (attrsOrAttrsFn: InnerAttrs) => {
         const styledWithAttrs = (styles: Parser[], attrs: InnerAttrs[] = []) => styled(styles, [attrsOrAttrsFn].concat(attrs))
+        // @ts-expect-error
         styledWithAttrs.attrs = attrs(styledWithAttrs)
 
         return styledWithAttrs
@@ -170,8 +171,11 @@ export function createStyled<Theme extends AnyTheme>() {
     return new Css(arguments[0])
   }
 
-  for (const method of Object.keys(methods)) {
+  const keys = Object.keys(methods) as Array<keyof typeof methods>
+  for (const method of keys) {
+    // @ts-expect-error
     styled[method] = methods[method]
+    // @ts-expect-error
     css[method] = methods[method]
   }
 
