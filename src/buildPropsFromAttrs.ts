@@ -1,4 +1,4 @@
-import { AnyTheme, BaseObject, InnerAttrs, Themed, UnknownProps } from './types'
+import { AnyTheme, AttrsFn, BaseObject, Themed, UnknownProps } from './types'
 
 /**
  * Combines passed props and props from attrs
@@ -13,7 +13,7 @@ import { AnyTheme, BaseObject, InnerAttrs, Themed, UnknownProps } from './types'
  * ]
  * result - { overriddenNumber: 2, number: 2 }
  */
-export function buildPropsFromAttrs<Theme extends BaseObject = AnyTheme>(props: Themed<UnknownProps, Theme>, attrs: InnerAttrs[]): Themed<UnknownProps, Theme> {
+export function buildPropsFromAttrs<Theme extends BaseObject = AnyTheme>(props: Themed<UnknownProps, Theme>, attrs: AttrsFn[]): Themed<UnknownProps, Theme> {
   for (const attr of attrs) {
     props = Object.assign(props, attr(props))
   }

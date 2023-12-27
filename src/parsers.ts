@@ -4,7 +4,7 @@ import { Falsy } from 'react-native'
 
 const functionKey = 'function'
 
-const isFunction = (fn: any): fn is Function => typeof fn === functionKey
+const isFunction = (fn: any): fn is Function => typeof fn === 'function'
 
 export type Parser = (styles: UnknownStyles, queue: Queue, props: UnknownProps) => void
 export type Queue = Array<Parser>
@@ -20,10 +20,21 @@ const parser = <T>(callback: (value: T, styles: UnknownStyles, queue: Queue, pro
     }
 
 export const maybeDynamic = (fn: (fnArgs: unknown[]) => unknown, args: unknown[]) => {
-  const isDynamic = args.some(isFunction)
+  let isDynamic = false
+  let indexes: number[] = []
+  for (let i = 0; i < args.length; i++) {
+    if (isFunction(args[i])) {
+      indexes.push(i)
+      isDynamic = true
+    }
+  }
   if (isDynamic) {
     return (props: UnknownProps) => {
-      const fnArgs = args.map((arg) => isFunction(arg) ? arg(props) : arg)
+      const fnArgs = ([] as unknown[]).concat(args)
+      for (const index of indexes) {
+        const dynamicStyle = fnArgs[index] as Function
+        fnArgs[index] = dynamicStyle(props)
+      }
       return fn(fnArgs)
     }
   }

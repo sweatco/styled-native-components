@@ -72,4 +72,5 @@ export class Css {
 
 export type UnknownProps = Record<string, unknown>
 export type UnknownStyles = Record<string, unknown>
-export type InnerAttrs = (props: Themed<UnknownProps, AnyTheme>) => UnknownProps
+export type AttrsFn = (props: Themed<UnknownProps, AnyTheme>) => UnknownProps
+export type InnerAttrs = AttrsFn | UnknownProps

@@ -1,5 +1,5 @@
-import { TouchableOpacity } from "react-native"
-import { createStyled } from "../styled"
+import { TouchableOpacity } from 'react-native'
+import { createStyled } from '../styled'
 
 describe('attrs', () => {
     test('', () => {

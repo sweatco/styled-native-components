@@ -12,6 +12,7 @@ import {
   ScrollView,
   SectionList,
   StyleProp,
+  StyleSheet,
   Text,
   TextInput,
   TouchableHighlight,
@@ -37,21 +38,8 @@ import {
 import { buildPropsFromAttrs } from './buildPropsFromAttrs'
 import { Parser, maybeDynamic, runtime, style, mixin, Queue } from './parsers'
 import { createTheme } from './theme'
-
-/**
- * We call it outside of the Components to separate fixed styles and build a queue of dynamically parsed styles
- * that will be invoked during the rendering phase.
- */
-export function splitStyles(parsers: Parser[]) {
-  const styles: UnknownStyles = {}
-  const dynamic: Queue = []
-
-  for (const parser of parsers) {
-    parser(styles, dynamic, {})
-  }
-
-  return { styles, dynamic }
-}
+import { splitStyles } from './splitStyles'
+import { splitAttrs } from './splitAttrs'
 
 export function buildDynamicStyles(
   props: Themed<UnknownProps, AnyTheme>,
@@ -67,7 +55,7 @@ export function buildDynamicStyles(
 }
 
 interface AnyStyleProps {
-  style?: UnknownStyles
+  style?: StyleProp<UnknownStyles>
 }
 
 type StyledComponent = React.ForwardRefExoticComponent<Omit<React.PropsWithChildren<UnknownProps & AnyStyleProps & AsComponentProps>, "ref"> & React.RefAttributes<unknown>> & {
@@ -98,41 +86,52 @@ export function createStyled<Theme extends AnyTheme>() {
       }
       parsers = isStyledComponent(Component) ? [...Component.parsers, ...parsers] : parsers
       attrs = isStyledComponent(Component) ? [...Component.attrs, ...attrs] : attrs
+      const { styles: fixedStyle, dynamic: dynamicStyles } = splitStyles(parsers)
+      const { fixedProps, dynamicAttrs } = splitAttrs(attrs)
       const origin = isStyledComponent(Component) ? Component.origin : Component
-      const { styles: fixedStyle, dynamic } = splitStyles(parsers)
+      const hasDynamicStyles = dynamicStyles.length > 0
+      const isDynamic = dynamicAttrs.length > 0 || dynamicStyles.length > 0
 
       // Component
-      const StyledComponent = React.forwardRef((props: PropsWithChildren<UnknownProps & AnyStyleProps & AsComponentProps>, ref) => {
+      type ThemedProps = Themed<UnknownProps, Theme>
+      const StyledComponent = React.forwardRef((props: PropsWithChildren<ThemedProps & AnyStyleProps & AsComponentProps>, ref) => {
         const theme = useContext(ThemeContext)
-        let style: StyleProp<UnknownStyles> = fixedStyle
-        let propsForElement: Themed<UnknownProps, Theme> = Object.assign({}, props, { theme })
-        if (attrs.length > 0) {
-          propsForElement = buildPropsFromAttrs(propsForElement, attrs)
-        }
-        if (dynamic.length > 0) {
-          style = Object.assign({}, style)
-          style = buildDynamicStyles(propsForElement, dynamic, style)
-        }
-        if (props.style) {
-          style = [style, props.style]
-        }
-        const parsedProps = Object.assign(propsForElement, { theme: props.theme, ref, style })
         const CastedComponent = (props.as ?? origin) as AnyComponent
-        return createElement(CastedComponent, parsedProps)
+        const hasCustomStyle = fixedStyle !== props.style
+        const shouldCopyProps = isDynamic || ref || hasCustomStyle
+        let propsForElement = shouldCopyProps ? Object.assign({}, props, { theme, ref }) : props
+        let style: StyleProp<UnknownStyles> = fixedStyle
+
+        if (dynamicAttrs.length > 0) {
+          propsForElement = buildPropsFromAttrs(propsForElement, dynamicAttrs)
+        }
+        if (hasDynamicStyles || hasCustomStyle) {
+          style = Object.assign({}, fixedStyle)
+        }
+        if (hasDynamicStyles) {
+          style = buildDynamicStyles(propsForElement, dynamicStyles, style)
+        }
+        if (hasCustomStyle) {
+          style = Object.assign(style, StyleSheet.flatten(props.style))
+        }
+        propsForElement.style = style
+        if (shouldCopyProps) {
+          propsForElement.theme = props.theme
+        }
+        return createElement(CastedComponent, propsForElement)
       }) as StyledComponent
 
       StyledComponent.displayName = 'StyledComponent'
       StyledComponent.isStyled = true
       StyledComponent.parsers = parsers
       StyledComponent.attrs = attrs
+      StyledComponent.defaultProps = Object.assign({ style: fixedStyle }, fixedProps)
       StyledComponent.origin = origin
-
       return StyledComponent
     }
     const attrs = (styled: typeof innerStyled) =>
-      (attrsOrAttrsFn: UnknownProps | ((props: Themed<UnknownProps, AnyTheme>) => UnknownProps)) => {
-        const attrsFn = typeof attrsOrAttrsFn !== 'function' ? () => attrsOrAttrsFn : attrsOrAttrsFn
-        const styledWithAttrs = (styles: Parser[], attrs: InnerAttrs[] = []) => styled(styles, [attrsFn].concat(attrs))
+      (attrsOrAttrsFn: InnerAttrs) => {
+        const styledWithAttrs = (styles: Parser[], attrs: InnerAttrs[] = []) => styled(styles, [attrsOrAttrsFn].concat(attrs))
         styledWithAttrs.attrs = attrs(styledWithAttrs)
 
         return styledWithAttrs
@@ -178,3 +177,27 @@ export function createStyled<Theme extends AnyTheme>() {
 
   return { styled, ThemeProvider, ThemeContext, css }
 }
+
+/**
+ * Override DefaultTheme to get accurate typings for your project.
+ *
+ * ```
+ * // create styled-native-components.d.ts in your project source
+ * // if it isn't being picked up, check tsconfig compilerOptions.types
+ * import 'styled-native-components'
+ * import Theme from './theme'
+ *
+ * type ThemeType = typeof Theme;
+ *
+ * declare module "styled-native-components" {
+ *  export interface DefaultTheme extends ThemeType {}
+ * }
+ * ```
+ */
+export interface DefaultTheme {
+  [key: string]: any
+}
+
+export const { styled, css, ThemeProvider, ThemeContext } = createStyled<DefaultTheme>()
+
+export default styled

@@ -1,10 +1,8 @@
 import React, { PropsWithChildren, useContext, useMemo } from 'react'
 import { AnyTheme } from './types'
 
-const Context = React.createContext<AnyTheme>({})
-
 export function createTheme<Theme extends AnyTheme>() {
-    const ThemeContext = Context as unknown as React.Context<Theme>
+    const ThemeContext = React.createContext<Theme>({} as Theme)
 
     const ThemeProvider = ({ theme, children }: PropsWithChildren<{ theme: Theme }>) => {
         const parentTheme = useContext(ThemeContext)

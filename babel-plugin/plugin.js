@@ -48,13 +48,25 @@ const isStyledMemberExpression = (node) => {
 }
 
 
-module.exports = function plugin(babel) {
+module.exports = function plugin(babel, config) {
     const { types: t } = babel
+    let hasStyledImport = false
+    const styledImports = ['styled-native-components'].concat(config.imports ?? [])
     return {
         visitor: {
+            ImportDeclaration: {
+                enter({ node: { source: { value: path } } }) {
+                    if (styledImports.includes(path)) {
+                        hasStyledImport = true
+                    }
+                },
+            },
             TaggedTemplateExpression(path) {
                 const { node: { tag } } = path
-                const isStyled = isStyledCallExpression(tag) || isStyledMemberExpression(tag) || isCSSCallExpression(tag)
+                if (!hasStyledImport) {
+                    return
+                }
+                const isStyled =  isStyledCallExpression(tag) || isStyledMemberExpression(tag) || isCSSCallExpression(tag)
                 if (!isStyled) {
                     return
                 }

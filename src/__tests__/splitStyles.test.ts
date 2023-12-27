@@ -1,5 +1,6 @@
 import { style, maybeDynamic, mixin } from '../parsers'
-import { splitStyles, createStyled } from '../styled'
+import { splitStyles } from '../splitStyles'
+import { createStyled } from '../styled'
 
 describe('splitStyles', () => {
     test('Should split passed styles', () => {
