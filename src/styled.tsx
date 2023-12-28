@@ -112,7 +112,7 @@ export function createStyled<Theme extends AnyTheme>() {
           style = buildDynamicStyles(propsForElement, dynamicStyles, style)
         }
         if (hasCustomStyle) {
-          style = Object.assign(style, StyleSheet.flatten(props.style))
+          style = [style, props.style]
         }
         propsForElement.style = style
         if (shouldCopyProps) {
