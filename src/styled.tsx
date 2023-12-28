@@ -12,7 +12,6 @@ import {
   ScrollView,
   SectionList,
   StyleProp,
-  StyleSheet,
   Text,
   TextInput,
   TouchableHighlight,
