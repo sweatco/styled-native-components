@@ -1,23 +1,30 @@
 # styled-native-components
 
-Enjoy the beauty of the `styled-components` API with the performance of `StyleSheet`. The aim of this project is to use the API of the `styled-components` library while shifting work from runtime to compile time and launch time.
+Enjoy the beauty of the `styled-components` API with the performance of `StyleSheet`. The aim of this project is to use the API of the `styled-components` library while shifting work from runtime to compile time.
 
-## Usage
-1. Add `styled-native-components/plugin` to your Babel configuration.
-2. Create a `styled` instance with your custom theme:
-```typescript
-
-interface CustomTheme {
-    colors: {
-        // ....
-    },
-}
-
-const { styled, css, ThemeProvider, ThemeContext } = createStyled<CustomTheme>()
+## Setup
+1. Add `styled-native-components/babel-plugin` to your Babel configuration.
+```diff
+module.exports = {
+    presets: ['module:metro-react-native-babel-preset',
+     
+    ],
++   plugins: ['styled-native-components/babel-plugin'],
+ }
 ```
-3. Wrap your root component in `ThemeProvider`.
 
-4. Write your components using the `styled` instance.
+2. Wrap the root component in `ThemeProvider`.
+
+3. Write components
+
+```ts
+import styled from 'styled-native-components'
+
+const Title = styled.View`
+  flex: 1;
+  padding: 5px;
+`
+```
 
 
 ## Under the Hood

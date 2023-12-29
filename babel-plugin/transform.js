@@ -35,8 +35,6 @@ const stringKeys = [
     RUNTIME,
 ]
 
-const runtimeKeys = ['border', 'boxShadow']
-
 const isSurrounded = (value, char) => value[0] === char && value[value.length - 1] === char
 const stringTransform = (key, value) => {
     if (isSurrounded(value, '\'') || isSurrounded(value, '"')) {
@@ -48,7 +46,6 @@ const runtimeTransform = (key, value) => ({ [RUNTIME]: [key, value] })
 
 const colorTransforms = colorKeys.map((key) => [key, stringTransform])
 const stringTransforms = stringKeys.map((key) => [key, stringTransform])
-const runtimeTransforms = runtimeKeys.map((key) => [key, runtimeTransform])
 
 const getNarrowedStylesForProperty = (key, value) => {
     const styles = getStylesForProperty(key, value)
@@ -99,7 +96,6 @@ const CustomTransformers = Object.fromEntries(
     []
     .concat(colorTransforms)
     .concat(stringTransforms)
-    .concat(runtimeTransforms)
     .concat(Object.entries(customTransforms))
 )
 
