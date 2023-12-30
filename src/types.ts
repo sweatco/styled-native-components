@@ -19,8 +19,6 @@ interface StyledObject<Props extends object = BaseObject> {
   [key: string]: StyledObject<Props> | string | number | StyleFunction<Props> | RuleSet<any> | undefined
 }
 
-export type StylePair = [string, unknown]
-
 export type Interpolation<Props extends object> =
   | StyleFunction<Props>
   | StyledObject<Props>
@@ -63,8 +61,6 @@ export interface Styled<
     attrs: ((props: Themed<Props & OwnProps, Theme>) => PickProps<R, OwnProps>) | PickProps<R, OwnProps>
   ): Styled<C, Theme, FastOmit<OwnProps, keyof R> & Props & Partial<R>>
 }
-
-export type DynamicStyleFn = (props: Themed<UnknownProps, AnyTheme>) => unknown
 
 export class Css {
   constructor(public parsers: Parser[]) {}
