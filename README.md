@@ -29,7 +29,7 @@ const Title = styled.View`
 
 ## Under the Hood
 
-1. The first step is to transpile string templates into small functions.
+1. The first step is to transpile string templates.
 
 
 > The library utilizes (postcss)[https://github.com/postcss/postcss] (css-to-react-native)[https://github.com/styled-components/css-to-react-native#readme] to parse string templates and build style pairs.
@@ -48,10 +48,10 @@ const Component = styled.View`
 
 after:
 ```typescript
-const Component = styled.View([
-    styled.style('height', 1),
-    styled.style('padding', 1),
-])
+const Component = styled.View({
+    height: 1,
+    padding: 1,
+})
 ```
 -----
 ### dynamic styles
@@ -65,10 +65,10 @@ const Box = styled.View<{ size: number }>`
 
 after:
 ```typescript
-const Box = styled.View([
-    styled.style('height', styled.maybeDynamic((args) => args[0], [(props) => props.size])),
-    styled.style('width', styled.maybeDynamic((args) => args[0], [(props) => props.size])),
-])
+const Box = styled.View({
+    height: styled.maybeDynamic((props) => props.size),
+    width: styled.maybeDynamic((props) => props.size),
+})
 ```
 
 -----
@@ -88,16 +88,14 @@ const Component = styled.View`
 
 after:
 ```typescript
-const shared = css([
-    css.style('background', 'white'),
-])
+const shared = css({
+    backgroundColor: 'white',
+})
 
-const Component = styled.View([
-    styled.mixin(shared),
-    styled.style('height', 1),
-])
+const Component = styled.View({
+    backgroundColor: 'white',
+    height: 1,
+})
 ```
 
-2. During the import of a component, all style pairs are processed and split into `fixed` and `dynamic` styles.
-
-3. During the rendering phase, `dynamic` styles are called with props passed to the component. They are then combined with `fixed` styles and applied to the component's styles.
+2. During the rendering phase, `dynamic` styles are called with props passed to the component. They are then combined with `fixed` styles and applied to the component's styles.
