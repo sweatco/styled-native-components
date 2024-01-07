@@ -1,11 +1,11 @@
-import { mixin } from '../parsers'
 import { buildDynamicStyles, createStyled } from '../styled'
+
+const props = { theme: {} }
 
 describe('styled props', () => {
     test('Should parse all styled props', () => {
         const { css } = createStyled()
-        const styles = {}
-        const styled = css`
+        const styles = css`
             //comment
             transform: rotate(${'android' === 'android' ? 180 : 0}deg) scale(${1});
             flex: ${2}; // iniline comment
@@ -63,9 +63,7 @@ describe('styled props', () => {
             fill: ${1}px;
         `
 
-        buildDynamicStyles({ theme: {} }, [mixin(styled)], styles)
-
-        expect(styles).toStrictEqual({
+        expect(buildDynamicStyles(props, styles)).toStrictEqual({
             'transform': [ { scale: 1 }, { rotate: '180deg' } ],
             'flex': 2,
             'flexDirection': '1',
@@ -125,8 +123,7 @@ describe('styled props', () => {
 
     test('Should handle camel case styles', () => {
         const { css } = createStyled()
-        const styles = {}
-        const styled = css`
+        const styles = css`
             flexDirection: ${'1'};
             justifyContent: ${'1'};
             alignItems: ${'1'};
@@ -181,9 +178,7 @@ describe('styled props', () => {
             fill: ${1}px;
         `
 
-        buildDynamicStyles({ theme: {} }, [mixin(styled)], styles)
-
-        expect(styles).toStrictEqual({
+        expect(buildDynamicStyles(props, styles)).toStrictEqual({
             'flexDirection': '1',
             'justifyContent': '1',
             'alignItems': '1',
@@ -241,8 +236,7 @@ describe('styled props', () => {
 
     test('Should handle shorten values', () => {
         const { css } = createStyled()
-        let styles = {}
-        let styled = css`
+        let styles = css`
             padding: ${1}px;
             margin: ${1}px;
             background: white;
@@ -250,9 +244,7 @@ describe('styled props', () => {
             border: 1px solid white;
         `
 
-        buildDynamicStyles({ theme: {} }, [mixin(styled)], styles)
-
-        expect(styles).toStrictEqual({
+        expect(buildDynamicStyles(props, styles)).toStrictEqual({
             padding: 1,
             margin: 1,
             backgroundColor: 'white',
@@ -262,14 +254,12 @@ describe('styled props', () => {
             borderColor: 'white',
         })
 
-        styles = {}
-        styled = css`
+        styles = css`
             flex: 1 0 auto;
             border: ${1}px solid ${'white'};
         `
-        buildDynamicStyles({ theme: {} }, [mixin(styled)], styles)
 
-        expect(styles).toStrictEqual({
+        expect(buildDynamicStyles(props, styles)).toStrictEqual({
             flexGrow: 1,
             flexShrink: 0,
             flexBasis: 'auto',
@@ -278,14 +268,12 @@ describe('styled props', () => {
             borderStyle: 'solid'
         })
 
-        styles = {}
-        styled = css`
+        styles = css`
             padding: 1px 2px;
             margin: 1px 2px;
         `
-        buildDynamicStyles({ theme: {} }, [mixin(styled)], styles)
 
-        expect(styles).toStrictEqual({
+        expect(buildDynamicStyles(props, styles)).toStrictEqual({
             marginHorizontal: 2,
             marginVertical: 1,
             paddingHorizontal: 2,
@@ -295,15 +283,12 @@ describe('styled props', () => {
 
     test('Should handle negative values', () => {
         const { css } = createStyled()
-        const styles = {}
-        const styled = css`
+        const styles = css`
             margin-top: -${1}px;
             transform: scaleX(${-1});
         `
 
-        buildDynamicStyles({ theme: {} }, [mixin(styled)], styles)
-
-        expect(styles).toStrictEqual({
+        expect(buildDynamicStyles(props, styles)).toStrictEqual({
             marginTop: -1,
             transform: [{ scaleX: -1 }],
         })
@@ -311,7 +296,7 @@ describe('styled props', () => {
 
     test('Should parse properly' , () => {
         const { css } = createStyled()
-        const styled = css`
+        const styles = css`
             border: ${1}px solid rgba(90, 234, 178, 0.6);
             transform: ${[{ translateY: 36 }]};
             transform: ${'rotate(180deg)'};
@@ -326,11 +311,8 @@ describe('styled props', () => {
             background: 'yellow';
             ${null};
         `
-        const styles = {}
 
-        buildDynamicStyles({ theme: {} }, [mixin(styled)], styles)
-
-        expect(styles).toStrictEqual({
+        expect(buildDynamicStyles(props, styles)).toStrictEqual({
             borderColor: 'rgba(90, 234, 178, 0.6)',
             borderStyle: 'solid',
             borderWidth: 1,
