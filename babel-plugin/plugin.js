@@ -6,15 +6,51 @@ const {
 const postcss = require('postcss')
 const { transform } = require('./transform')
 const { MIXIN, RUNTIME } = require('./constants')
+const { createHash } = require('crypto')
 
 const STYLED = 'styled'
 const CSS = 'css'
 const MAGIC_NUMBER = 123456789
+const FILE_HASH = 'styled-native-components-file-hash'
+const NEXT_ID_KEY = 'styled-native-components-next-id'
 const SUBSTITUTION_REGEX = new RegExp(`(\\d+\\.${MAGIC_NUMBER})`, 'g')
 function kebabToCamel(str) {
     return str.replace(/-./g, match => match.charAt(1).toUpperCase());
 }
 
+const sha256Hash = (str) => createHash('sha256').update(str).digest()
+
+function shortHash(str, len = 10) {
+	const buffer = sha256Hash(str)
+
+	// Lose a bit off first byte to avoid base64 string starting with digit
+	buffer[0] &= 127;
+
+	// Convert to base64 string of desired length, replacing chars not legal in JS identifiers
+	return buffer.toString('base64')
+		.slice(0, len)
+		.replace(/=+$/, '')
+		.replace(/\+/g, '_')
+		.replace(/\//g, '$')
+}
+function nextIndex(state) {
+    const id = state.file.get(NEXT_ID_KEY) || 0
+    state.file.set(NEXT_ID_KEY, id + 1)
+    return id
+}
+function fileHash({ file, filename }) {
+    // hash calculation is costly due to fs operations, so we'll cache it per file.
+    if (file.get(FILE_HASH)) {
+      return file.get(FILE_HASH)
+    }
+
+    const hash = shortHash(filename)
+    file.set(FILE_HASH, hash)
+
+    return hash
+}
+
+const nextId = (state) => `${fileHash(state)}-${nextIndex(state)}`
 const isCSSCallExpression = (node) => isIdentifier(node) && node.name === CSS
 const isStyledCallExpression = (node) => {
     if (!isCallExpression(node)) {
@@ -61,7 +97,7 @@ module.exports = function plugin(babel, config) {
                     }
                 },
             },
-            TaggedTemplateExpression(path) {
+            TaggedTemplateExpression(path, state) {
                 const { node: { tag } } = path
                 if (!hasStyledImport) {
                     return
@@ -74,10 +110,9 @@ module.exports = function plugin(babel, config) {
                 const css = path.get("quasi").node
                 const { cssText, substitutionMap } = extractSubstitutionMap(css)
                 const styles = parseCss(cssText, substitutionMap)
-                const buildCss = buildCssObject(identifier, t, substitutionMap)
-                const cssObject = buildCss(styles)
+                const buildCss = buildCssObject(identifier, t, substitutionMap, state)
 
-                path.replaceWith(t.callExpression(tag, [cssObject]))
+                path.replaceWith(t.callExpression(tag, [buildCss(styles)]))
             }
         }
     }
@@ -164,12 +199,21 @@ function parseCss(cssText, substitutionMap) {
     return styles
 }
 
-function buildCssObject(identifier, t, substitutions) {
-    function maybeDynamic(value, args) {
+function buildCssObject(identifier, t, substitutions, state) {
+    function maybeDynamic(value) {
         return t.callExpression(
             t.memberExpression(
                 t.identifier(identifier),
                 t.identifier('maybeDynamic')
+            ),
+            [value]
+        )
+    }
+    function substitute(value, args) {
+        return t.callExpression(
+            t.memberExpression(
+                t.identifier(identifier),
+                t.identifier('substitute')
             ),
             [value, t.arrayExpression(args)]
         )
@@ -183,22 +227,22 @@ function buildCssObject(identifier, t, substitutions) {
             [key, value]
         )
     }
-    function runtime(key, value) {
+    function runtime(id, key, value) {
         return t.callExpression(
             t.memberExpression(
                 t.identifier(identifier),
                 t.identifier('runtime')
             ),
-            [key, value]
+            [id, key, value]
         )
     }
-    function mixin(value) {
+    function mixin(id, value) {
         return t.callExpression(
             t.memberExpression(
                 t.identifier(identifier),
                 t.identifier('mixin')
             ),
-            [value]
+            [id, value]
         )
     }
     function caller(args) {
@@ -268,27 +312,34 @@ function buildCssObject(identifier, t, substitutions) {
     }
 
     return (node) => {
-        const styles = []
+        const properties = []
         const buildExpression = (value, args) => {
             const mapper = travers(args)
             const expression = mapper(value)
-            if (args.length) {
-                return maybeDynamic(caller(expression), args)
-            }
 
-            return expression
+            return args.length ? substitute(caller(expression), args) : expression
         }
         for (let [key, value] of node) {
             const args = []
             if (key === RUNTIME) {
-                styles.push(runtime(t.stringLiteral(value[0]), buildExpression(value[1], args)))
+                const expression = buildExpression(value[1], args)
+                const id = t.stringLiteral(nextId(state))
+                properties.push(t.spreadElement(runtime(id, t.stringLiteral(value[0]), expression))) // {...runtime()}
             } else if (key === MIXIN) {
-                styles.push(mixin(buildExpression(value, args)))
+                const expression = buildExpression(value, args)
+                const id = t.stringLiteral(nextId(state))
+                properties.push(t.spreadElement(mixin(id, expression))) // {...mixin()}
             } else {
-                styles.push(style(t.stringLiteral(key), buildExpression(value, args)))
+                let expression = buildExpression(value, args)
+
+                if (isCallExpression(expression)) {
+                    expression = maybeDynamic(expression)
+                }
+
+                properties.push(t.objectProperty(t.identifier(key), expression))
             }
         }
 
-        return t.arrayExpression(styles)
+        return t.objectExpression(properties)
     }
 }

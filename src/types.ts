@@ -1,5 +1,4 @@
 import React, { ComponentPropsWithRef, ForwardRefExoticComponent } from 'react'
-import { Parser } from './parsers'
 
 export type AnyComponent<P extends object = any> = React.ComponentType<P>
 
@@ -30,7 +29,7 @@ export type Interpolation<Props extends object> =
   | null
   | RuleSet<Props>
   | Array<Interpolation<Props>>
-  | Css
+  | UnknownStyles
 
 export type Styles<Props extends object> = TemplateStringsArray | Interpolation<Props>
 
@@ -60,10 +59,6 @@ export interface Styled<
   attrs<Props extends object, R extends object = Props>(
     attrs: ((props: Themed<Props & OwnProps, Theme>) => PickProps<R, OwnProps>) | PickProps<R, OwnProps>
   ): Styled<C, Theme, FastOmit<OwnProps, keyof R> & Props & Partial<R>>
-}
-
-export class Css {
-  constructor(public parsers: Parser[]) {}
 }
 
 export type UnknownProps = Record<string, unknown>

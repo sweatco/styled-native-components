@@ -31,26 +31,28 @@ import {
   Themed,
   UnknownProps,
   AsComponentProps,
-  Css,
   UnknownStyles,
 } from './types'
 import { buildPropsFromAttrs } from './buildPropsFromAttrs'
-import { Parser, maybeDynamic, runtime, style, mixin, Queue } from './parsers'
+import { maybeDynamic, substitute, runtime, mixin } from './parsers'
 import { createTheme } from './theme'
-import { splitStyles } from './splitStyles'
 import { splitAttrs } from './splitAttrs'
 
 export function buildDynamicStyles(
   props: Themed<UnknownProps, AnyTheme>,
-  queue: Queue,
-  styles: UnknownStyles = {}
+  styles: UnknownStyles,
 ) {
-  const initial: Queue = []
-  queue = initial.concat(queue)
-  for (const parser of queue) {
-    parser(styles, queue, props)
+  const result: UnknownStyles = {}
+  for (const key in styles) {
+    const value = styles[key]
+    if (isFunction(value)) {
+      value(props, result, key)
+    } else {
+      result[key] = value
+    }
   }
-  return styles
+
+  return result
 }
 
 interface AnyStyleProps {
@@ -59,16 +61,17 @@ interface AnyStyleProps {
 
 type StyledComponent = React.ForwardRefExoticComponent<Omit<React.PropsWithChildren<UnknownProps & AnyStyleProps & AsComponentProps>, "ref"> & React.RefAttributes<unknown>> & {
   isStyled?: boolean
-  parsers: Parser[]
+  initialStyles: UnknownStyles
   attrs: InnerAttrs[]
   origin: AnyComponent
 }
 
+const isFunction = (fn: any): fn is Function => typeof fn === 'function'
 const isStyledComponent = (component: AnyComponent): component is StyledComponent => !!(component as StyledComponent)?.isStyled
 
 const methods = {
-  style,
   maybeDynamic,
+  substitute,
   runtime,
   mixin,
 }
@@ -77,26 +80,27 @@ export function createStyled<Theme extends AnyTheme>() {
   const { ThemeContext, ThemeProvider } = createTheme<Theme>()
 
   function styled<C extends AnyComponent>(Component: C): Styled<C, Theme> {
-    function innerStyled(parsers: Parser[], attrs: InnerAttrs[] = []) {
+    function innerStyled(initialStyles: UnknownStyles, attrs: InnerAttrs[] = []) {
       if (process.env.NODE_ENV !== 'production') {
-        if (!Array.isArray(parsers)) {
+        if (typeof initialStyles !== 'object') {
           throw new Error('It seems you forgot to add babel plugin.')
         }
       }
-      parsers = isStyledComponent(Component) ? [...Component.parsers, ...parsers] : parsers
+      initialStyles = isStyledComponent(Component) ? { ...Component.initialStyles, ...initialStyles } : initialStyles
       attrs = isStyledComponent(Component) ? [...Component.attrs, ...attrs] : attrs
-      const { styles: fixedStyle, dynamic: dynamicStyles } = splitStyles(parsers)
+      const hasDynamicStyles = Object.keys(initialStyles).some((key) => isFunction(initialStyles[key]))
+      const fixedStyle = hasDynamicStyles ? undefined : initialStyles
       const { fixedProps, dynamicAttrs } = splitAttrs(attrs)
       const origin = isStyledComponent(Component) ? Component.origin : Component
-      const hasDynamicStyles = dynamicStyles.length > 0
-      const isDynamic = dynamicAttrs.length > 0 || dynamicStyles.length > 0
+      const isDynamic = dynamicAttrs.length > 0 || hasDynamicStyles
 
       // Component
       type ThemedProps = Themed<UnknownProps, Theme>
       const StyledComponent = React.forwardRef((props: PropsWithChildren<ThemedProps & AnyStyleProps & AsComponentProps>, ref) => {
         const theme = useContext(ThemeContext)
         const CastedComponent = (props.as ?? origin) as AnyComponent
-        const hasCustomStyle = fixedStyle !== props.style
+        const styleFromProps = props.style
+        const hasCustomStyle = styleFromProps && fixedStyle !== styleFromProps
         // We add fixed props and styles to defaultProps. Thanks to this, we don't need to copy the props object.
         // We copy the props object in the following cases:
         // 1. ref is not null, meaning the parent has set a ref for the component.
@@ -109,14 +113,11 @@ export function createStyled<Theme extends AnyTheme>() {
         if (dynamicAttrs.length > 0) {
           propsForElement = buildPropsFromAttrs(propsForElement, dynamicAttrs)
         }
-        if (hasDynamicStyles || hasCustomStyle) {
-          style = Object.assign({}, fixedStyle)
-        }
         if (hasDynamicStyles) {
-          style = buildDynamicStyles(propsForElement, dynamicStyles, style)
+          style = buildDynamicStyles(propsForElement, initialStyles)
         }
         if (hasCustomStyle) {
-          style = [style, props.style]
+          style = [style, styleFromProps]
         }
         propsForElement.style = style
         if (shouldCopyProps) {
@@ -127,7 +128,7 @@ export function createStyled<Theme extends AnyTheme>() {
 
       StyledComponent.displayName = 'StyledComponent'
       StyledComponent.isStyled = true
-      StyledComponent.parsers = parsers
+      StyledComponent.initialStyles = initialStyles
       StyledComponent.attrs = attrs
       StyledComponent.defaultProps = Object.assign({ style: fixedStyle }, fixedProps)
       StyledComponent.origin = origin
@@ -135,7 +136,7 @@ export function createStyled<Theme extends AnyTheme>() {
     }
     const attrs = (styled: typeof innerStyled) =>
       (attrsOrAttrsFn: InnerAttrs) => {
-        const styledWithAttrs = (styles: Parser[], attrs: InnerAttrs[] = []) => styled(styles, [attrsOrAttrsFn].concat(attrs))
+        const styledWithAttrs = (styles: UnknownStyles, attrs: InnerAttrs[] = []) => styled(styles, [attrsOrAttrsFn].concat(attrs))
         // @ts-expect-error
         styledWithAttrs.attrs = attrs(styledWithAttrs)
 
@@ -144,7 +145,7 @@ export function createStyled<Theme extends AnyTheme>() {
     innerStyled.attrs = attrs(innerStyled)
     // We use as unknown as Type constraction here becasue
     // it is expected that argument so the styled function is transformed to an Array<Array> type during Babel transpilation.
-    return innerStyled as unknown as Styled<C, Theme>
+    return innerStyled as Styled<C, Theme>
   }
 
   styled.Button = styled(Button)
@@ -168,11 +169,10 @@ export function createStyled<Theme extends AnyTheme>() {
 
   // It is expected that _styles and _interpolations are transformed to an Array<Function> type during Babel transpilation.
   function css<Props extends object = BaseObject>(
-    _styles: Styles<Themed<Props, Theme>> | Parser[],
+    _styles: Styles<Themed<Props, Theme>>,
     ..._interpolations: Array<Interpolation<Themed<Props, Theme>>>
   ) {
-    // eslint-disable-next-line prefer-rest-params
-    return new Css(arguments[0])
+    return _styles as UnknownStyles
   }
 
   const keys = Object.keys(methods) as Array<keyof typeof methods>

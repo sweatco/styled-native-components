@@ -1,13 +1,13 @@
-import { maybeDynamic } from '../parsers'
+import { substitute } from '../parsers'
 
-describe('maybeDynamic', () => {
+describe('substitute', () => {
     test('Should return primitives if no function is passed in the arguments', () => {
         const object =  { method: jest.fn() }
         const array = [object, object]
         const args = [1, 'string', true, {}, object, array]
         const fn = jest.fn(() => true)
 
-        const result = maybeDynamic(fn, args)
+        const result = substitute(fn, args)
         expect(fn).toHaveBeenCalledWith(args)
         expect(result).toBe(true)
     })
@@ -22,7 +22,7 @@ describe('maybeDynamic', () => {
         const fn = jest.fn(((props: unknown) => props))
 
         // @ts-expect-error
-        const fnResult = maybeDynamic(fn, args)(props)
+        const fnResult = substitute(fn, args)(props)
 
         expect(fnResult).toStrictEqual([1, 'string', true, {}, object, array, fnAsArgResult])
         expect(fnAsArg).toHaveBeenCalledWith(props)
