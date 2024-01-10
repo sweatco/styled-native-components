@@ -78,6 +78,7 @@ before:
 ```typescript
 const shared = css`
     background: white;
+    width: ${(props) => props.size}px;
 `
 
 const Component = styled.View`
@@ -88,12 +89,13 @@ const Component = styled.View`
 
 after:
 ```typescript
-const shared = css({
+const shared = {
     backgroundColor: 'white',
-})
+    width: styled.maybeDynamic((props) => props.size),
+}
 
 const Component = styled.View({
-    backgroundColor: 'white',
+    ...shared,
     height: 1,
 })
 ```
