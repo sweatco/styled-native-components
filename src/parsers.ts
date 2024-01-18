@@ -1,8 +1,12 @@
 import { getStylesForProperty } from 'css-to-react-native'
 import { UnknownProps, UnknownStyles } from './types'
+import { buildDynamicStyles } from './buildDynamicStyles'
 
 const isFunction = (fn: any): fn is Function => typeof fn === 'function'
 
+/**
+ * If at least one of args is a function, return a function that will be called with the props passed to the component.
+ */
 export const substitute = (fn: (fnArgs: unknown[]) => unknown, args: unknown[]) => {
   let isDynamic = false
   let indexes: number[] = []
@@ -14,7 +18,8 @@ export const substitute = (fn: (fnArgs: unknown[]) => unknown, args: unknown[]) 
   }
   if (isDynamic) {
     return (props: UnknownProps) => {
-      const fnArgs = ([] as unknown[]).concat(args)
+      let fnArgs: unknown[] = []
+      fnArgs = fnArgs.concat(args)
       for (const index of indexes) {
         const dynamicStyle = fnArgs[index] as Function
         fnArgs[index] = dynamicStyle(props)
@@ -26,14 +31,23 @@ export const substitute = (fn: (fnArgs: unknown[]) => unknown, args: unknown[]) 
   return fn(args)
 }
 
-export const maybeDynamic = (value: unknown) => {
-  if (isFunction(value)) {
-    return (props: UnknownProps, style: UnknownStyles, key: string) => {
-      style[key] = value(props)
-    }
-  }
+let currentId = Number.MIN_SAFE_INTEGER
+const nextId = () => currentId++
+const PARSER = Symbol()
 
-  return value
+interface Parser {
+  (props: UnknownProps, style: UnknownStyles): void
+  [PARSER]: true
+}
+
+export const isParser = (value: any): value is Parser => value[PARSER] === true
+
+const dynamic = (fn: (props: UnknownProps, style: UnknownStyles) => unknown) => {
+  const dynamicValue = fn as Parser
+  dynamicValue[PARSER] = true
+  return {
+    [`__snc_${nextId()}`]: dynamicValue
+  }
 }
 
 const getRuntimeStyles = (key: string, value: unknown) => {
@@ -49,26 +63,32 @@ const getRuntimeStyles = (key: string, value: unknown) => {
     }
   }
 }
-export const runtime = (id: string, key: string, value: unknown) => {
+
+/**
+ * Parse style value at runtime.
+ * If value is a function, it will be called with the props passed to the component and parsed during render time.
+ */
+export const runtime = (key: string, value: unknown) => {
   if (isFunction(value)) {
-      return {
-          [id]: (props: UnknownProps, style: UnknownStyles) => {
-            Object.assign(style, getRuntimeStyles(key, value(props)))
-          }
-      }
+    return dynamic((props, style) => {
+      Object.assign(style, getRuntimeStyles(key, value(props)))
+    })
   }
 
   return getRuntimeStyles(key, value)
 }
 
-export const mixin = (id: string, value: UnknownProps) => {
+export const mixin = (value: unknown) => {
   if (isFunction(value)) {
-      return {
-          [id]: (props: UnknownProps, style: UnknownStyles) => {
-            Object.assign(style, value(props))
-          }
+    return dynamic((props, style) => {
+      const mixinStyles = value(props)
+      if (mixinStyles && typeof mixinStyles === 'object') {
+        buildDynamicStyles(props, mixinStyles, style)
       }
+    })
   }
 
-  return value
+  if (typeof value === 'object') {
+    return value
+  }
 }

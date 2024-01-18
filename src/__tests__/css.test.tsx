@@ -1,4 +1,5 @@
-import { buildDynamicStyles, createStyled } from '../styled'
+import { createStyled } from '../styled'
+import { buildDynamicStyles } from '../buildDynamicStyles'
 
 const props = { theme: {} }
 
@@ -294,7 +295,7 @@ describe('styled props', () => {
         })
     })
 
-    test('Should parse properly' , () => {
+    test('Should parse styles properly' , () => {
         const { css } = createStyled()
         const styles = css`
             border: ${1}px solid rgba(90, 234, 178, 0.6);
@@ -309,7 +310,6 @@ describe('styled props', () => {
             `};
             background: green;
             background: 'yellow';
-            ${null};
         `
 
         expect(buildDynamicStyles(props, styles)).toStrictEqual({

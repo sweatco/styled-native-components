@@ -1,4 +1,5 @@
-import { buildDynamicStyles, createStyled } from '../styled'
+import { createStyled } from '../styled'
+import { buildDynamicStyles } from '../buildDynamicStyles'
 
 const { css } = createStyled()
 const props = { theme: {} }
@@ -14,7 +15,7 @@ describe('runtime parser', () => {
         })
     })
 
-    test('Should paese the border property', () => {
+    test('Should parse the border property', () => {
         let styles = css`
             border: ${'dashed'};
         `
@@ -24,6 +25,7 @@ describe('runtime parser', () => {
             borderStyle: 'dashed',
             borderWidth: 1,
         })
+
         styles = css`
             border: ${10}px;
         `
@@ -32,6 +34,17 @@ describe('runtime parser', () => {
             borderColor: 'black',
             borderStyle: 'solid',
             borderWidth: 10,
+        })
+
+        styles = css`
+            border: ${() => 'white'};
+        `
+
+        const result = buildDynamicStyles(props, styles)
+        expect(result).toStrictEqual({
+            borderColor: 'white',
+            borderStyle: 'solid',
+            borderWidth: 1,
         })
     })
 })

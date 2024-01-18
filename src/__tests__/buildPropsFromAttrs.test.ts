@@ -30,7 +30,7 @@ describe('buildPropsFromAttrs', () => {
         })
     })
 
-    test('Should not mutated passed props', () => {
+    test('Should not mutate passed props', () => {
         const excpectedProps = {
             number: 0,
             theme: {},

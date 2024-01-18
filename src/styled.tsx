@@ -34,26 +34,11 @@ import {
   UnknownStyles,
 } from './types'
 import { buildPropsFromAttrs } from './buildPropsFromAttrs'
-import { maybeDynamic, substitute, runtime, mixin } from './parsers'
+import { substitute, runtime, mixin } from './parsers'
 import { createTheme } from './theme'
 import { splitAttrs } from './splitAttrs'
-
-export function buildDynamicStyles(
-  props: Themed<UnknownProps, AnyTheme>,
-  styles: UnknownStyles,
-) {
-  const result: UnknownStyles = {}
-  for (const key in styles) {
-    const value = styles[key]
-    if (isFunction(value)) {
-      value(props, result, key)
-    } else {
-      result[key] = value
-    }
-  }
-
-  return result
-}
+import { buildDynamicStyles } from './buildDynamicStyles'
+import { isFunction } from './utils'
 
 interface AnyStyleProps {
   style?: StyleProp<UnknownStyles>
@@ -66,11 +51,9 @@ type StyledComponent = React.ForwardRefExoticComponent<Omit<React.PropsWithChild
   origin: AnyComponent
 }
 
-const isFunction = (fn: any): fn is Function => typeof fn === 'function'
 const isStyledComponent = (component: AnyComponent): component is StyledComponent => !!(component as StyledComponent)?.isStyled
 
 const methods = {
-  maybeDynamic,
   substitute,
   runtime,
   mixin,
