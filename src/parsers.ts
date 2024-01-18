@@ -1,8 +1,7 @@
 import { getStylesForProperty } from 'css-to-react-native'
 import { UnknownProps, UnknownStyles } from './types'
 import { buildDynamicStyles } from './buildDynamicStyles'
-
-const isFunction = (fn: any): fn is Function => typeof fn === 'function'
+import { isFunction } from './utils'
 
 /**
  * If at least one of args is a function, return a function that will be called with the props passed to the component.

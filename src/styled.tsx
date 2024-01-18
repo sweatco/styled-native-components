@@ -32,6 +32,7 @@ import {
   UnknownProps,
   AsComponentProps,
   UnknownStyles,
+  StyledObject,
 } from './types'
 import { buildPropsFromAttrs } from './buildPropsFromAttrs'
 import { substitute, runtime, mixin } from './parsers'
@@ -150,12 +151,11 @@ export function createStyled<Theme extends AnyTheme>() {
   styled.TouchableWithoutFeedback = styled(TouchableWithoutFeedback)
   styled.ImageBackground = styled(ImageBackground)
 
-  // It is expected that _styles and _interpolations are transformed to an Array<Function> type during Babel transpilation.
   function css<Props extends object = BaseObject>(
     _styles: Styles<Themed<Props, Theme>>,
     ..._interpolations: Array<Interpolation<Themed<Props, Theme>>>
   ) {
-    return _styles as UnknownStyles
+    return _styles as StyledObject<Props>
   }
 
   const keys = Object.keys(methods) as Array<keyof typeof methods>
