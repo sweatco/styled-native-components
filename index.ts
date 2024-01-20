@@ -1,4 +1,5 @@
 import { createStyled } from './src/styled'
+import { Styled } from './src/types'
 
 export { createStyled }
 
@@ -25,3 +26,7 @@ export interface DefaultTheme {
 export const { styled, css, ThemeProvider, ThemeContext } = createStyled<DefaultTheme>()
 
 export default styled
+
+export type {
+    Styled
+}
