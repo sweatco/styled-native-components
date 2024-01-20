@@ -1,6 +1,5 @@
-import { AttrsFn, InnerAttrs, UnknownProps } from "./types"
-
-const isFunction = (fn: any): fn is Function => typeof fn === 'function'
+import { AttrsFn, InnerAttrs, UnknownProps } from './types'
+import { isFunction } from './utils'
 
 export function splitAttrs(attrs: InnerAttrs[]) {
     let fixedProps: UnknownProps | null = {}

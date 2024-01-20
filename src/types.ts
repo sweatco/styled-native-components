@@ -12,10 +12,8 @@ type Substitute<A extends object, B extends object> = FastOmit<A, keyof B> & B
 
 export type AnyTheme = BaseObject
 
-type RuleSet<Props extends object = BaseObject> = Array<Interpolation<Props>>
-
-interface StyledObject<Props extends object = BaseObject> {
-  [key: string]: StyledObject<Props> | string | number | StyleFunction<Props> | RuleSet<any> | undefined
+export interface StyledObject<Props extends object = BaseObject> {
+  [key: string]: StyledObject<Props> | string | number | StyleFunction<Props> | Array<Interpolation<Props>> | undefined
 }
 
 export type Interpolation<Props extends object> =
@@ -27,9 +25,7 @@ export type Interpolation<Props extends object> =
   | false
   | undefined
   | null
-  | RuleSet<Props>
   | Array<Interpolation<Props>>
-  | UnknownStyles
 
 export type Styles<Props extends object> = TemplateStringsArray | Interpolation<Props>
 
@@ -62,6 +58,6 @@ export interface Styled<
 }
 
 export type UnknownProps = Record<string, unknown>
-export type UnknownStyles = Record<string, unknown>
+export type UnknownStyles = Record<string, any>
 export type AttrsFn = (props: Themed<UnknownProps, AnyTheme>) => UnknownProps
 export type InnerAttrs = AttrsFn | UnknownProps

@@ -12,7 +12,7 @@ describe('substitute', () => {
         expect(result).toBe(true)
     })
 
-    test('Should return primitives if function is passed in the arguments', () => {
+    test('Should return wrapper if function is passed in the arguments', () => {
         const object =  { method: jest.fn() }
         const array = [object, object]
         const fnAsArgResult = 'fnAsArgResult'

@@ -1,10 +1,11 @@
-import { buildDynamicStyles, createStyled } from '../styled'
+import { createStyled } from '../styled'
+import { buildDynamicStyles } from '../buildDynamicStyles'
 
 const { css } = createStyled()
 const props = { theme: {} }
 
-describe('override', () => {
-    it('Should override props', () => {
+describe('mixins', () => {
+    it('Should override styles', () => {
         let styles = css`
             flex: ${() => 1};
             flex: 2;
@@ -30,11 +31,15 @@ describe('override', () => {
         `
         let styles = css`
             ${mixin};
+            ${css`
+               color: red; 
+            `};
             flex: 2;
         `
 
         expect(buildDynamicStyles(props, styles)).toStrictEqual({
             flex: 2,
+            color: 'red',
         })
 
         styles = css`
@@ -58,6 +63,41 @@ describe('override', () => {
         const styles = css`
             flex: 2;
             ${mixin2};
+        `
+
+        expect(buildDynamicStyles(props, styles)).toStrictEqual({
+            flex: 3,
+        })
+    })
+
+    it('Should override dynamic mixins', () => {
+        const mixin1 = css`
+            flex: 3;
+        `
+        const styles = css`
+            ${() => css`
+                color: red;
+                flex: 1;
+            `};
+            flex: 2;
+            ${() => mixin1}
+        `
+
+        expect(buildDynamicStyles(props, styles)).toStrictEqual({
+            color: 'red',
+            flex: 3,
+        })
+    })
+
+    it('Should override dynamic nested mixins', () => {
+        const mixin1 = css`
+            flex: ${() => 3};
+        `
+        const mixin2 = css`
+            ${() => mixin1};
+        `
+        const styles = css`
+            ${() => mixin2};
         `
 
         expect(buildDynamicStyles(props, styles)).toStrictEqual({

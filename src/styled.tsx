@@ -32,28 +32,14 @@ import {
   UnknownProps,
   AsComponentProps,
   UnknownStyles,
+  StyledObject,
 } from './types'
 import { buildPropsFromAttrs } from './buildPropsFromAttrs'
-import { maybeDynamic, substitute, runtime, mixin } from './parsers'
+import { substitute, runtime, mixin } from './parsers'
 import { createTheme } from './theme'
 import { splitAttrs } from './splitAttrs'
-
-export function buildDynamicStyles(
-  props: Themed<UnknownProps, AnyTheme>,
-  styles: UnknownStyles,
-) {
-  const result: UnknownStyles = {}
-  for (const key in styles) {
-    const value = styles[key]
-    if (isFunction(value)) {
-      value(props, result, key)
-    } else {
-      result[key] = value
-    }
-  }
-
-  return result
-}
+import { buildDynamicStyles } from './buildDynamicStyles'
+import { isFunction } from './utils'
 
 interface AnyStyleProps {
   style?: StyleProp<UnknownStyles>
@@ -66,11 +52,9 @@ type StyledComponent = React.ForwardRefExoticComponent<Omit<React.PropsWithChild
   origin: AnyComponent
 }
 
-const isFunction = (fn: any): fn is Function => typeof fn === 'function'
 const isStyledComponent = (component: AnyComponent): component is StyledComponent => !!(component as StyledComponent)?.isStyled
 
 const methods = {
-  maybeDynamic,
   substitute,
   runtime,
   mixin,
@@ -167,12 +151,11 @@ export function createStyled<Theme extends AnyTheme>() {
   styled.TouchableWithoutFeedback = styled(TouchableWithoutFeedback)
   styled.ImageBackground = styled(ImageBackground)
 
-  // It is expected that _styles and _interpolations are transformed to an Array<Function> type during Babel transpilation.
   function css<Props extends object = BaseObject>(
     _styles: Styles<Themed<Props, Theme>>,
     ..._interpolations: Array<Interpolation<Themed<Props, Theme>>>
   ) {
-    return _styles as UnknownStyles
+    return _styles as StyledObject<Props>
   }
 
   const keys = Object.keys(methods) as Array<keyof typeof methods>
