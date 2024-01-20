@@ -1,5 +1,6 @@
 import { createStyled } from '../styled'
 import { buildDynamicStyles } from '../buildDynamicStyles'
+import styled from '../..'
 
 const { css } = createStyled()
 const props = { theme: {} }
@@ -102,6 +103,22 @@ describe('mixins', () => {
 
         expect(buildDynamicStyles(props, styles)).toStrictEqual({
             flex: 3,
+        })
+    })
+
+    it('Should override styled component', () => {
+        const Component = styled.View`
+            flex: 1;
+        `
+
+        const styles = css`
+            ${Component};
+            height: 2px;
+        `
+
+        expect(buildDynamicStyles(props, styles)).toStrictEqual({
+            flex: 1,
+            height: 2,
         })
     })
 })

@@ -1,6 +1,8 @@
 import React, { PropsWithChildren, createElement, useContext } from 'react'
 import {
+  ActivityIndicator,
   Button,
+  DrawerLayoutAndroid,
   FlatList,
   Image,
   ImageBackground,
@@ -12,6 +14,7 @@ import {
   ScrollView,
   SectionList,
   StyleProp,
+  Switch,
   Text,
   TextInput,
   TouchableHighlight,
@@ -33,26 +36,15 @@ import {
   AsComponentProps,
   UnknownStyles,
   StyledObject,
+  StyledComponent,
+  AnyStyleProps,
 } from './types'
 import { buildPropsFromAttrs } from './buildPropsFromAttrs'
 import { substitute, runtime, mixin } from './parsers'
 import { createTheme } from './theme'
 import { splitAttrs } from './splitAttrs'
 import { buildDynamicStyles } from './buildDynamicStyles'
-import { isFunction } from './utils'
-
-interface AnyStyleProps {
-  style?: StyleProp<UnknownStyles>
-}
-
-type StyledComponent = React.ForwardRefExoticComponent<Omit<React.PropsWithChildren<UnknownProps & AnyStyleProps & AsComponentProps>, "ref"> & React.RefAttributes<unknown>> & {
-  isStyled?: boolean
-  initialStyles: UnknownStyles
-  attrs: InnerAttrs[]
-  origin: AnyComponent
-}
-
-const isStyledComponent = (component: AnyComponent): component is StyledComponent => !!(component as StyledComponent)?.isStyled
+import { isFunction, isStyledComponent } from './utils'
 
 const methods = {
   substitute,
@@ -70,7 +62,7 @@ export function createStyled<Theme extends AnyTheme>() {
           throw new Error('It seems you forgot to add babel plugin.')
         }
       }
-      initialStyles = isStyledComponent(Component) ? { ...Component.initialStyles, ...initialStyles } : initialStyles
+      initialStyles = isStyledComponent(Component) ? { ...Component.styles, ...initialStyles } : initialStyles
       attrs = isStyledComponent(Component) ? [...Component.attrs, ...attrs] : attrs
       const hasDynamicStyles = Object.keys(initialStyles).some((key) => isFunction(initialStyles[key]))
       const fixedStyle = hasDynamicStyles ? undefined : initialStyles
@@ -112,7 +104,7 @@ export function createStyled<Theme extends AnyTheme>() {
 
       StyledComponent.displayName = 'StyledComponent'
       StyledComponent.isStyled = true
-      StyledComponent.initialStyles = initialStyles
+      StyledComponent.styles = initialStyles
       StyledComponent.attrs = attrs
       StyledComponent.defaultProps = Object.assign({ style: fixedStyle }, fixedProps)
       StyledComponent.origin = origin
@@ -129,10 +121,12 @@ export function createStyled<Theme extends AnyTheme>() {
     innerStyled.attrs = attrs(innerStyled)
     // We use as unknown as Type constraction here becasue
     // it is expected that argument so the styled function is transformed to an Array<Array> type during Babel transpilation.
-    return innerStyled as Styled<C, Theme>
+    return innerStyled as unknown as Styled<C, Theme>
   }
 
+  styled.ActivityIndicator = styled(ActivityIndicator)
   styled.Button = styled(Button)
+  styled.DrawerLayoutAndroid = styled(DrawerLayoutAndroid)
   styled.FlatList = styled(FlatList)
   styled.Image = styled(Image)
   styled.KeyboardAvoidingView = styled(KeyboardAvoidingView)
@@ -142,6 +136,7 @@ export function createStyled<Theme extends AnyTheme>() {
   styled.SafeAreaView = styled(SafeAreaView)
   styled.ScrollView = styled(ScrollView)
   styled.SectionList = styled(SectionList)
+  styled.Switch = styled(Switch)
   styled.Text = styled(Text)
   styled.TextInput = styled(TextInput)
   styled.TouchableHighlight = styled(TouchableHighlight)

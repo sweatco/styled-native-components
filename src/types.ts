@@ -1,4 +1,5 @@
 import React, { ComponentPropsWithRef, ForwardRefExoticComponent } from 'react'
+import { StyleProp } from 'react-native'
 
 export type AnyComponent<P extends object = any> = React.ComponentType<P>
 
@@ -16,7 +17,14 @@ export interface StyledObject<Props extends object = BaseObject> {
   [key: string]: StyledObject<Props> | string | number | StyleFunction<Props> | Array<Interpolation<Props>> | undefined
 }
 
+/**
+ * Use this type to disambiguate between a styled-component instance
+ * and a StyleFunction or any other type of function.
+ */
+export type StyledComponentBrand<Props extends object> = { styles: StyledObject<Props>; readonly _sc: symbol }
+
 export type Interpolation<Props extends object> =
+  | StyledComponentBrand<Props>
   | StyleFunction<Props>
   | StyledObject<Props>
   | TemplateStringsArray
@@ -51,7 +59,7 @@ export interface Styled<
   <Props extends object = OwnProps>(
     styles: Styles<Themed<OwnProps & Props, Theme>>,
     ...interpolations: Array<Interpolation<Themed<OwnProps & Props, Theme>>>
-  ): ForwardRefExoticComponent<Substitute<OwnProps, Props & AsComponentProps>>
+  ): ForwardRefExoticComponent<Substitute<OwnProps, Props & AsComponentProps>> & StyledComponentBrand<OwnProps & Props>
   attrs<Props extends object, R extends object = Props>(
     attrs: ((props: Themed<Props & OwnProps, Theme>) => PickProps<R, OwnProps>) | PickProps<R, OwnProps>
   ): Styled<C, Theme, FastOmit<OwnProps, keyof R> & Props & Partial<R>>
@@ -61,3 +69,14 @@ export type UnknownProps = Record<string, unknown>
 export type UnknownStyles = Record<string, any>
 export type AttrsFn = (props: Themed<UnknownProps, AnyTheme>) => UnknownProps
 export type InnerAttrs = AttrsFn | UnknownProps
+
+export interface AnyStyleProps {
+  style?: StyleProp<UnknownStyles>
+}
+
+export type StyledComponent = React.ForwardRefExoticComponent<Omit<React.PropsWithChildren<UnknownProps & AnyStyleProps & AsComponentProps>, "ref"> & React.RefAttributes<unknown>> & {
+  isStyled?: boolean
+  styles: StyledObject
+  attrs: InnerAttrs[]
+  origin: AnyComponent
+}
