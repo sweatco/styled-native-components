@@ -1,7 +1,7 @@
 import { getStylesForProperty } from 'css-to-react-native'
 import { UnknownProps, UnknownStyles } from './types'
 import { buildDynamicStyles } from './buildDynamicStyles'
-import { isFunction } from './utils'
+import { isFunction, isStyledComponent } from './utils'
 
 /**
  * If at least one of args is a function, return a function that will be called with the props passed to the component.
@@ -78,9 +78,13 @@ export const runtime = (key: string, value: unknown) => {
 }
 
 export const mixin = (value: unknown) => {
+  if (isStyledComponent(value)) {
+    value = value.styles
+  }
   if (isFunction(value)) {
+    const fn = value as Function
     return dynamic((props, style) => {
-      const mixinStyles = value(props)
+      const mixinStyles = fn(props)
       if (mixinStyles && typeof mixinStyles === 'object') {
         buildDynamicStyles(props, mixinStyles, style)
       }
