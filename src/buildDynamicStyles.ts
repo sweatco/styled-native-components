@@ -13,7 +13,11 @@ export function buildDynamicStyles(
       if (isParser(value)) {
         value(props, dynamicStyles)
       } else {
-        dynamicStyles[key] = value(props)
+        let resultOrFn = value(props)
+        while(isFunction(resultOrFn)) {
+          resultOrFn = resultOrFn(props)
+        }
+        dynamicStyles[key] = resultOrFn
       }
     } else {
       dynamicStyles[key] = value

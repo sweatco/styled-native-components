@@ -1,5 +1,6 @@
 import { createStyled } from '../styled'
 import { buildDynamicStyles } from '../buildDynamicStyles'
+import { UnknownProps } from '../types'
 
 const props = { theme: {} }
 
@@ -320,6 +321,19 @@ describe('styled props', () => {
             fontFamily: 'RobotoMono-Regular',
             height: 1,
             backgroundColor: 'yellow',
+        })
+    })
+
+    test('Should handle nested functions', () => {
+        const cfs = (value: number) => (_props: UnknownProps) => value
+        const props = { scale: 2 }
+        const { css } = createStyled()
+        const styles = css<typeof props>`
+            font-size: ${({ scale }) => cfs(2 * scale)}px;
+        `
+
+        expect(buildDynamicStyles(props, styles)).toStrictEqual({
+            fontSize: 4,
         })
     })
 })
