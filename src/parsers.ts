@@ -1,7 +1,8 @@
-import { getStylesForProperty } from 'css-to-react-native'
 import { UnknownProps, UnknownStyles } from './types'
 import { buildDynamicStyles } from './buildDynamicStyles'
 import { isFunction, isStyledComponent } from './utils'
+import { stringToStyles } from './stringToStyles'
+import { getRuntimeStyles } from './getRuntimeStyles'
 
 /**
  * If at least one of args is a function, return a function that will be called with the props passed to the component.
@@ -49,20 +50,6 @@ const dynamic = (fn: (props: UnknownProps, style: UnknownStyles) => unknown) => 
   }
 }
 
-const getRuntimeStyles = (key: string, value: unknown) => {
-  try {
-    if (typeof value === 'string' || typeof value === 'number') {
-      return getStylesForProperty(key, String(value))
-    }
-
-    return { [key]: value }
-  } catch (error) {
-    if (__DEV__) {
-      throw error
-    }
-  }
-}
-
 /**
  * Parse style value at runtime.
  * If value is a function, it will be called with the props passed to the component and parsed during render time.
@@ -85,13 +72,24 @@ export const mixin = (value: unknown) => {
     const fn = value as Function
     return dynamic((props, style) => {
       const mixinStyles = fn(props)
-      if (mixinStyles && typeof mixinStyles === 'object') {
+      if (!mixinStyles) {
+        return
+      }
+      if (isStyledComponent(mixinStyles)) {
+        buildDynamicStyles(props, mixinStyles.styles, style)
+      } else if (typeof mixinStyles === 'object') {
         buildDynamicStyles(props, mixinStyles, style)
+      } else if (typeof mixinStyles === 'string') {
+        buildDynamicStyles(props, stringToStyles(mixinStyles), style)
       }
     })
   }
 
   if (typeof value === 'object') {
     return value
+  }
+
+  if (typeof value === 'string') {
+    return stringToStyles(value)
   }
 }

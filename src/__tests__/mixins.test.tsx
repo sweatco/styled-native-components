@@ -121,4 +121,61 @@ describe('mixins', () => {
             height: 2,
         })
     })
+
+    it('Should override the styled component if it is set as a dynamic style', () => {
+        const Component = styled.View`
+            flex: 1;
+        `
+
+        const styles = css`
+            ${() => Component};
+            height: 2px;
+        `
+
+        expect(buildDynamicStyles(props, styles)).toStrictEqual({
+            flex: 1,
+            height: 2,
+        })
+    })
+
+    it('Should handle strings in mixin', () => {
+        let styles = css`
+            flex: 1;
+            padding-vertical: ${12}px;
+            padding-horizontal: ${12}px;
+        
+            ${() =>
+            `
+                align-items: ${'center'};
+                justify-content: center;
+            `}
+        `
+
+        expect(buildDynamicStyles(props, styles)).toStrictEqual({
+            flex: 1,
+            paddingVertical: 12,
+            paddingHorizontal: 12,
+            alignItems: 'center',
+            justifyContent: 'center',
+        })
+
+        styles = css`
+            flex: 1;
+            padding-vertical: ${12}px;
+            padding-horizontal: ${12}px;
+        
+            ${`
+                align-items: ${'center'};
+                justify-content: center;
+            `}
+        `
+
+        expect(buildDynamicStyles(props, styles)).toStrictEqual({
+            flex: 1,
+            paddingVertical: 12,
+            paddingHorizontal: 12,
+            alignItems: 'center',
+            justifyContent: 'center',
+        })
+    })
 })

@@ -6,8 +6,32 @@ const props = { theme: {} }
 
 describe('runtime parser', () => {
     test('Should parse the transform property', () => {
-        const styles = css`
+        let styles = css`
             transform: ${() => 'rotate(180deg)'};
+        `
+
+        expect(buildDynamicStyles(props, styles)).toStrictEqual({
+            transform: [ { rotate: '180deg' } ],
+        })
+
+        styles = css`
+            transform: ${() =>  `rotate(${true ? 180 : 0}deg)`};
+        `
+
+        expect(buildDynamicStyles(props, styles)).toStrictEqual({
+            transform: [ { rotate: '180deg' } ],
+        })
+
+        styles = css<{ rotate?: string }>`
+            transform: ${({ rotate = '180deg' }) =>  `rotate(${rotate})`};
+        `
+
+        expect(buildDynamicStyles(props, styles)).toStrictEqual({
+            transform: [ { rotate: '180deg' } ],
+        })
+
+        styles = css<{ rotation?: number }>`
+            transform: rotate(${({ rotation = 180 }) => `${rotation}deg`});
         `
 
         expect(buildDynamicStyles(props, styles)).toStrictEqual({
