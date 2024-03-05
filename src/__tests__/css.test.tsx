@@ -336,4 +336,17 @@ describe('styled props', () => {
             fontSize: 4,
         })
     })
+
+    test('Should handle border-radius', () => {
+        const { css } = createStyled()
+        const styles = css`
+            border-top-start-radius: ${16}px;
+            border-top-end-radius: ${16}px;
+        `
+
+        expect(buildDynamicStyles(props, styles)).toStrictEqual({
+            borderTopStartRadius: 16,
+            borderTopEndRadius: 16,
+        })
+    })
 })
