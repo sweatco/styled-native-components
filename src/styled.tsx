@@ -93,7 +93,7 @@ export function createStyled<Theme extends AnyTheme>() {
           style = buildDynamicStyles(propsForElement, initialStyles)
         }
         if (hasCustomStyle) {
-          style = [style, styleFromProps]
+          style = [style].concat(styleFromProps)
         }
         propsForElement.style = style
         if (shouldCopyProps) {
