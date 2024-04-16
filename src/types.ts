@@ -1,7 +1,7 @@
-import React, { ComponentPropsWithRef, ForwardRefExoticComponent } from 'react'
+import { ComponentType, ComponentPropsWithRef, ForwardRefExoticComponent } from 'react'
 import { StyleProp } from 'react-native'
 
-export type AnyComponent<P extends object = any> = React.ComponentType<P>
+export type AnyComponent<P extends object = any> = ComponentType<P>
 
 export interface BaseObject {}
 
@@ -39,10 +39,8 @@ export type Styles<Props extends object> = TemplateStringsArray | Interpolation<
 
 type StyleFunction<Props extends object> = (props: Props) => Interpolation<Props>
 
-type PropsWithRef<C extends AnyComponent> = ComponentPropsWithRef<C>
-
-type PickProps<NewA, OwnProps> = {
-  [P in keyof NewA]: P extends keyof OwnProps ? (NewA[P] extends OwnProps[P] ? NewA[P] : never) : never
+type PickProps<OwnProps, NewA> = {
+  [P in keyof NewA]: P extends keyof OwnProps ? OwnProps[P] & NewA[P] : never
 }
 
 export type Themed<Props, Theme extends AnyTheme> = Props & {
@@ -54,14 +52,14 @@ export type AsComponentProps = { as?: React.ComponentType }
 export interface Styled<
   C extends AnyComponent,
   Theme extends AnyTheme = BaseObject,
-  OwnProps extends BaseObject = PropsWithRef<C>
+  OwnProps extends BaseObject = ComponentPropsWithRef<C>,
 > {
   <Props extends object = OwnProps>(
     styles: Styles<Themed<OwnProps & Props, Theme>>,
     ...interpolations: Array<Interpolation<Themed<OwnProps & Props, Theme>>>
   ): ForwardRefExoticComponent<Substitute<OwnProps, Props & AsComponentProps>> & StyledComponentBrand<OwnProps & Props>
-  attrs<Props extends object, R extends object = Props>(
-    attrs: ((props: Themed<Props & OwnProps, Theme>) => PickProps<R, OwnProps>) | PickProps<R, OwnProps>
+  attrs<Props extends BaseObject, R extends BaseObject = Props>(
+    attrs: ((props: Themed<Props & OwnProps, Theme>) => PickProps<OwnProps, R>) | PickProps<OwnProps, R>
   ): Styled<C, Theme, FastOmit<OwnProps, keyof R> & Props & Partial<R>>
 }
 

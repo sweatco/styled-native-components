@@ -349,4 +349,47 @@ describe('styled props', () => {
             borderTopEndRadius: 16,
         })
     })
+
+    test('Should handle zero values', () => {
+        const { css } = createStyled()
+        let styles = css`
+            padding: 0;
+            width: 0;
+            height: ${() => 0};
+        `
+
+        expect(buildDynamicStyles(props, styles)).toStrictEqual({
+            padding: 0,
+            width: 0,
+            height: 0,
+        })
+
+        styles = css`
+            padding: 0 ${22}px ${22}px;
+        `
+
+        expect(buildDynamicStyles(props, styles)).toStrictEqual({
+            paddingBottom: 22,
+            paddingHorizontal: 22,
+            paddingTop: 0,
+        })
+    })
+
+    test('Should handle dynamic values without postfix', () => {
+        const { css } = createStyled()
+        const styles = css`
+            width: ${() => 100};
+            height: 100;
+            padding: ${() => '10px 10px 10px 10px'};
+        `
+
+        expect(buildDynamicStyles(props, styles)).toStrictEqual({
+            width: 100,
+            height: 100,
+            paddingBottom: 10,
+            paddingLeft: 10,
+            paddingRight: 10,
+            paddingTop: 10,
+        })
+    })
 })
