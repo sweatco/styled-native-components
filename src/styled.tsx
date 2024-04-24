@@ -76,7 +76,7 @@ export function createStyled<Theme extends AnyTheme>() {
         const theme = useContext(ThemeContext)
         const CastedComponent = (props.as ?? origin) as AnyComponent
         const styleFromProps = props.style
-        const hasCustomStyle = styleFromProps && fixedStyle !== styleFromProps
+        const hasCustomStyle = fixedStyle !== styleFromProps
         // We add fixed props and styles to defaultProps. Thanks to this, we don't need to copy the props object.
         // We copy the props object in the following cases:
         // 1. ref is not null, meaning the parent has set a ref for the component.
@@ -93,7 +93,7 @@ export function createStyled<Theme extends AnyTheme>() {
           style = buildDynamicStyles(propsForElement, initialStyles)
         }
         if (hasCustomStyle) {
-          style = [style].concat(styleFromProps)
+          style = ([style] as Array<StyleProp<UnknownStyles>>).concat(styleFromProps)
         }
         propsForElement.style = style
         if (shouldCopyProps) {
