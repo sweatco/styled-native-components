@@ -42,7 +42,6 @@ import {
 import { buildPropsFromAttrs } from './buildPropsFromAttrs'
 import { substitute, runtime, mixin } from './parsers'
 import { createTheme } from './theme'
-import { splitAttrs } from './splitAttrs'
 import { buildDynamicStyles } from './buildDynamicStyles'
 import { isFunction, isStyledComponent } from './utils'
 
@@ -66,39 +65,30 @@ export function createStyled<Theme extends AnyTheme>() {
       attrs = isStyledComponent(Component) ? [...Component.attrs, ...attrs] : attrs
       const hasDynamicStyles = Object.keys(initialStyles).some((key) => isFunction(initialStyles[key]))
       const fixedStyle = hasDynamicStyles ? undefined : initialStyles
-      const { fixedProps, dynamicAttrs } = splitAttrs(attrs)
       const origin = isStyledComponent(Component) ? Component.origin : Component
-      const isDynamic = dynamicAttrs.length > 0 || hasDynamicStyles
 
       // Component
       type ThemedProps = Themed<UnknownProps, Theme>
       const StyledComponent = React.forwardRef((props: PropsWithChildren<ThemedProps & AnyStyleProps & AsComponentProps>, ref) => {
         const theme = useContext(ThemeContext)
         const CastedComponent = (props.as ?? origin) as AnyComponent
-        const styleFromProps = props.style
-        const hasCustomStyle = fixedStyle !== styleFromProps
-        // We add fixed props and styles to defaultProps. Thanks to this, we don't need to copy the props object.
-        // We copy the props object in the following cases:
-        // 1. ref is not null, meaning the parent has set a ref for the component.
-        // 2. There are dynamic props that depend on the component's props.
-        // 3. There are dynamic attributes that depend on the component's props.
-        const shouldCopyProps = isDynamic || ref || hasCustomStyle
-        let propsForElement = shouldCopyProps ? Object.assign({}, props, { theme, ref }) : props
+        let propsForElement: ThemedProps = Object.assign({}, props, { theme, ref })
         let style: StyleProp<UnknownStyles> = fixedStyle
 
-        if (dynamicAttrs.length > 0) {
-          propsForElement = buildPropsFromAttrs(propsForElement, dynamicAttrs)
+        if (attrs.length > 0) {
+          propsForElement = buildPropsFromAttrs(propsForElement, attrs)
         }
         if (hasDynamicStyles) {
           style = buildDynamicStyles(propsForElement, initialStyles)
         }
-        if (hasCustomStyle) {
+
+        const styleFromProps = props.style
+        if (styleFromProps) {
           style = ([style] as Array<StyleProp<UnknownStyles>>).concat(styleFromProps)
         }
         propsForElement.style = style
-        if (shouldCopyProps) {
-          propsForElement.theme = props.theme
-        }
+        propsForElement.theme = props.theme
+
         return createElement(CastedComponent, propsForElement)
       }) as StyledComponent
 
@@ -106,7 +96,6 @@ export function createStyled<Theme extends AnyTheme>() {
       StyledComponent.isStyled = true
       StyledComponent.styles = initialStyles
       StyledComponent.attrs = attrs
-      StyledComponent.defaultProps = Object.assign({ style: fixedStyle }, fixedProps)
       StyledComponent.origin = origin
       return StyledComponent
     }
