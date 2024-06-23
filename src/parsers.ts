@@ -46,7 +46,7 @@ const dynamic = (fn: (props: UnknownProps, style: UnknownStyles) => unknown) => 
   const dynamicValue = fn as Parser
   dynamicValue[PARSER] = true
   return {
-    [`__snc_${nextId()}`]: dynamicValue
+    [`__snc_${nextId()}`]: dynamicValue,
   }
 }
 

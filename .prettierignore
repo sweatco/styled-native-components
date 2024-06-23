@@ -1,0 +1,16 @@
+*.json
+*.d.ts
+.yarn
+*.sh
+*.rb
+*.log
+*.md
+*.lock
+example/ios/**
+example/android/**
+.gitignore
+.prettierignore
+*.yml
+*.xml
+example/Gemfile
+LICENSE

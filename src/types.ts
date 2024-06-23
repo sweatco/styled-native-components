@@ -72,7 +72,9 @@ export interface AnyStyleProps {
   style?: StyleProp<UnknownStyles>
 }
 
-export type StyledComponent = React.ForwardRefExoticComponent<Omit<React.PropsWithChildren<UnknownProps & AnyStyleProps & AsComponentProps>, "ref"> & React.RefAttributes<unknown>> & {
+export type StyledComponent = React.ForwardRefExoticComponent<
+  Omit<React.PropsWithChildren<UnknownProps & AnyStyleProps & AsComponentProps>, 'ref'> & React.RefAttributes<unknown>
+> & {
   isStyled?: boolean
   styles: StyledObject
   attrs: InnerAttrs[]

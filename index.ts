@@ -20,13 +20,11 @@ export { createStyled }
  * ```
  */
 export interface DefaultTheme {
-    [key: string]: any
+  [key: string]: any
 }
 
 export const { styled, css, ThemeProvider, ThemeContext } = createStyled<DefaultTheme>()
 
 export default styled
 
-export type {
-    Styled
-}
+export type { Styled }

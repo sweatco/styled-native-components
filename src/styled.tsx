@@ -69,28 +69,30 @@ export function createStyled<Theme extends AnyTheme>() {
 
       // Component
       type ThemedProps = Themed<UnknownProps, Theme>
-      const StyledComponent = React.forwardRef((props: PropsWithChildren<ThemedProps & AnyStyleProps & AsComponentProps>, ref) => {
-        const theme = useContext(ThemeContext)
-        const CastedComponent = (props.as ?? origin) as AnyComponent
-        let propsForElement: ThemedProps = Object.assign({}, props, { theme, ref })
-        let style: StyleProp<UnknownStyles> = fixedStyle
+      const StyledComponent = React.forwardRef(
+        (props: PropsWithChildren<ThemedProps & AnyStyleProps & AsComponentProps>, ref) => {
+          const theme = useContext(ThemeContext)
+          const CastedComponent = (props.as ?? origin) as AnyComponent
+          let propsForElement: ThemedProps = Object.assign({}, props, { theme, ref })
+          let style: StyleProp<UnknownStyles> = fixedStyle
 
-        if (attrs.length > 0) {
-          propsForElement = buildPropsFromAttrs(propsForElement, attrs)
-        }
-        if (hasDynamicStyles) {
-          style = buildDynamicStyles(propsForElement, initialStyles)
-        }
+          if (attrs.length > 0) {
+            propsForElement = buildPropsFromAttrs(propsForElement, attrs)
+          }
+          if (hasDynamicStyles) {
+            style = buildDynamicStyles(propsForElement, initialStyles)
+          }
 
-        const styleFromProps = props.style
-        if (styleFromProps) {
-          style = ([style] as Array<StyleProp<UnknownStyles>>).concat(styleFromProps)
-        }
-        propsForElement.style = style
-        propsForElement.theme = props.theme
+          const styleFromProps = props.style
+          if (styleFromProps) {
+            style = ([style] as Array<StyleProp<UnknownStyles>>).concat(styleFromProps)
+          }
+          propsForElement.style = style
+          propsForElement.theme = props.theme
 
-        return createElement(CastedComponent, propsForElement)
-      }) as StyledComponent
+          return createElement(CastedComponent, propsForElement)
+        }
+      ) as StyledComponent
 
       StyledComponent.displayName = 'StyledComponent'
       StyledComponent.isStyled = true
@@ -99,13 +101,13 @@ export function createStyled<Theme extends AnyTheme>() {
       StyledComponent.origin = origin
       return StyledComponent
     }
-    const attrs = (styled: typeof innerStyled) =>
-      (attrsOrAttrsFn: InnerAttrs) => {
-        const styledWithAttrs = (styles: UnknownStyles, attrs: InnerAttrs[] = []) => styled(styles, [attrsOrAttrsFn].concat(attrs))
-        // @ts-expect-error
-        styledWithAttrs.attrs = attrs(styledWithAttrs)
+    const attrs = (styled: typeof innerStyled) => (attrsOrAttrsFn: InnerAttrs) => {
+      const styledWithAttrs = (styles: UnknownStyles, attrs: InnerAttrs[] = []) =>
+        styled(styles, [attrsOrAttrsFn].concat(attrs))
+      // @ts-expect-error
+      styledWithAttrs.attrs = attrs(styledWithAttrs)
 
-        return styledWithAttrs
+      return styledWithAttrs
     }
     innerStyled.attrs = attrs(innerStyled)
     // We use as unknown as Type constraction here becasue

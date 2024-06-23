@@ -2,11 +2,7 @@ import { isParser } from './parsers'
 import { UnknownProps, UnknownStyles } from './types'
 import { isFunction } from './utils'
 
-export function buildDynamicStyles(
-  props: UnknownProps,
-  styles: UnknownStyles,
-  dynamicStyles: UnknownStyles = {},
-) {
+export function buildDynamicStyles(props: UnknownProps, styles: UnknownStyles, dynamicStyles: UnknownStyles = {}) {
   for (const key in styles) {
     const value = styles[key]
     if (isFunction(value)) {
@@ -14,7 +10,7 @@ export function buildDynamicStyles(
         value(props, dynamicStyles)
       } else {
         let resultOrFn = value(props)
-        while(isFunction(resultOrFn)) {
+        while (isFunction(resultOrFn)) {
           resultOrFn = resultOrFn(props)
         }
         dynamicStyles[key] = resultOrFn
@@ -23,6 +19,6 @@ export function buildDynamicStyles(
       dynamicStyles[key] = value
     }
   }
-  
+
   return dynamicStyles
 }

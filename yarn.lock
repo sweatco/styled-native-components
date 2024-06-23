@@ -5807,6 +5807,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"prettier@npm:^3.3.2":
+  version: 3.3.2
+  resolution: "prettier@npm:3.3.2"
+  bin:
+    prettier: bin/prettier.cjs
+  checksum: 10c0/39ed27d17f0238da6dd6571d63026566bd790d3d0edac57c285fbab525982060c8f1e01955fe38134ab10f0951a6076da37f015db8173c02f14bc7f0803a384c
+  languageName: node
+  linkType: hard
+
 "pretty-format@npm:^26.5.2, pretty-format@npm:^26.6.2":
   version: 26.6.2
   resolution: "pretty-format@npm:26.6.2"
@@ -6718,6 +6727,7 @@ __metadata:
     css-to-react-native: "npm:^3.2.0"
     jest: "npm:^29.7.0"
     postcss: "npm:^8.4.38"
+    prettier: "npm:^3.3.2"
     react: "npm:^18.3.1"
     react-native: "npm:^0.74.1"
     typescript: "npm:^5.4.5"

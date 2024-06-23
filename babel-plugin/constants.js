@@ -1,4 +1,4 @@
 module.exports = {
-    MIXIN: 'MIXIN',
-    RUNTIME: 'RUNTIME',
+  MIXIN: 'MIXIN',
+  RUNTIME: 'RUNTIME',
 }
