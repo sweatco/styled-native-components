@@ -1,6 +1,11 @@
 {
     "extends": "@tsconfig/react-native/tsconfig.json",
     "compilerOptions": {
+        "baseUrl": "./",
+        "paths": {
+          "styled-native-components": ["./index"],
+          "styled-native-components/native": ["./native"],
+        },
         "strictNullChecks": true,
         "noUnusedLocals": true,
         "noUnusedParameters": true,
