@@ -33,5 +33,8 @@
     "react": ">=18.2.0",
     "react-native": ">=0.73.0"
   },
+  "resolutions": {
+    "braces": "^3.0.3"
+  },
   "packageManager": "yarn@4.1.1"
 }
