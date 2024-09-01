@@ -1,8 +1,9 @@
-const { isCallExpression, isIdentifier, isMemberExpression } = require('@babel/types')
+const { isCallExpression, isIdentifier, isMemberExpression, isVariableDeclarator, isObjectProperty } = require('@babel/types')
 const postcss = require('postcss')
 const { transform } = require('./transform')
 const { MIXIN, RUNTIME } = require('./constants')
 const { createHash } = require('crypto')
+const Path = require('path')
 
 const STYLED = 'styled'
 const CSS = 'css'
@@ -80,9 +81,23 @@ module.exports = function plugin(babel, config) {
         const css = path.get('quasi').node
         const { cssText, substitutionMap } = extractSubstitutionMap(css)
         const styles = parseCss(cssText, substitutionMap)
-        const buildCss = buildCssObject(identifier, t, substitutionMap, state)
+        const buildCss = buildCssObject(identifier, t, substitutionMap)
+        let tagExpression = tag
 
-        path.replaceWith(t.callExpression(tag, [buildCss(styles)]))
+        if (process.env.NODE_ENV !== 'production' && !isCSSCallExpression(tag)) {
+          // Create an AST node for the expression .meta({...})
+          const tagWithMetaExpression = t.callExpression(
+            t.memberExpression(
+              tag,
+              t.identifier('meta'),
+              false,
+            ),
+            [createMeta(t, path, state)]
+          )
+          tagExpression = tagWithMetaExpression // .meta({...})
+        }
+
+        path.replaceWith(t.callExpression(tagExpression, [buildCss(styles)]))
       },
     },
   }
@@ -162,7 +177,7 @@ function parseCss(cssText, substitutionMap) {
   return styles
 }
 
-function buildCssObject(identifier, t, substitutions, state) {
+function buildCssObject(identifier, t, substitutions) {
   function substitute(value, args) {
     return t.callExpression(t.memberExpression(t.identifier(identifier), t.identifier('substitute')), [
       value,
@@ -266,4 +281,40 @@ function buildCssObject(identifier, t, substitutions, state) {
 
     return t.objectExpression(properties)
   }
+}
+
+function createMeta(t, path, state) {
+  const nullIndentifier = t.identifier('null')
+  const displayName = getDisplayName(t, path, state)
+  const reciverFrames = t.arrowFunctionExpression(
+    [], // No parameters
+    t.newExpression(
+      t.identifier('Error'), // new Error
+      [] // No arguments passed to Error
+    )
+  )
+  const meta = [
+    t.objectProperty(t.identifier('displayName'), t.stringLiteral(displayName)),
+    t.objectProperty(t.identifier('reciverFrames'), reciverFrames),
+  ]
+
+  return t.objectExpression(meta)
+}
+
+function getDisplayName(t, path, state) {
+  const componentPath = Path
+        .relative(state.cwd, state.filename)
+        .replace(/\\/g, '/')
+  const line = path?.node?.loc?.start.line
+  const pathToComponent = `${componentPath}:${line}`
+  const parentNode = path?.parentPath?.node
+  let name = 'Styled'
+
+  if (isVariableDeclarator(parentNode)) {
+    name = parentNode.id.name
+  } else if (isObjectProperty(parentNode)) {
+    name = parentNode.key.name
+  }
+
+  return `Styled(${name})`
 }
