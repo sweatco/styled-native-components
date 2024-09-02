@@ -38,12 +38,15 @@ import {
   StyledObject,
   StyledComponent,
   AnyStyleProps,
+  Meta,
 } from './types'
 import { buildPropsFromAttrs } from './buildPropsFromAttrs'
 import { substitute, runtime, mixin } from './parsers'
 import { createTheme } from './theme'
 import { buildDynamicStyles } from './buildDynamicStyles'
 import { isFunction, isStyledComponent } from './utils'
+import { injectReciverPathToStack } from './reactDevToolHacks'
+import { getStyledDisplayName } from './getStyledDisplayName'
 
 const methods = {
   substitute,
@@ -55,9 +58,9 @@ export function createStyled<Theme extends AnyTheme>() {
   const { ThemeContext, ThemeProvider } = createTheme<Theme>()
 
   function styled<C extends AnyComponent>(Component: C): Styled<C, Theme> {
-    function innerStyled(initialStyles: UnknownStyles, attrs: InnerAttrs[] = []) {
+    function innerStyled(initialStyles: UnknownStyles, attrs: InnerAttrs[] = [], meta?: Meta) {
       if (process.env.NODE_ENV !== 'production') {
-        if (typeof initialStyles !== 'object') {
+        if (typeof initialStyles !== 'object' || Array.isArray(initialStyles)) {
           throw new Error('It seems you forgot to add babel plugin.')
         }
       }
@@ -70,31 +73,36 @@ export function createStyled<Theme extends AnyTheme>() {
       // Component
       type ThemedProps = Themed<UnknownProps, Theme>
       const StyledComponent = React.forwardRef(
-        (props: PropsWithChildren<ThemedProps & AnyStyleProps & AsComponentProps>, ref) => {
-          const theme = useContext(ThemeContext)
-          const CastedComponent = (props.as ?? origin) as AnyComponent
-          let propsForElement: ThemedProps = Object.assign({}, props, { theme, ref })
-          let style: StyleProp<UnknownStyles> = fixedStyle
+        (props: PropsWithChildren<ThemedProps & AnyStyleProps & AsComponentProps>, ref: React.ForwardedRef<unknown>) => {
+          try {
+            const theme = useContext(ThemeContext)
+            const CastedComponent = (props.as ?? origin) as AnyComponent
+            let propsForElement: ThemedProps = Object.assign({}, props, { theme, ref })
+            let style: StyleProp<UnknownStyles> = fixedStyle
 
-          if (attrs.length > 0) {
-            propsForElement = buildPropsFromAttrs(propsForElement, attrs)
-          }
-          if (hasDynamicStyles) {
-            style = buildDynamicStyles(propsForElement, initialStyles)
-          }
+            if (attrs.length > 0) {
+              propsForElement = buildPropsFromAttrs(propsForElement, attrs)
+            }
+            if (hasDynamicStyles) {
+              style = buildDynamicStyles(propsForElement, initialStyles)
+            }
 
-          const styleFromProps = props.style
-          if (styleFromProps) {
-            style = ([style] as Array<StyleProp<UnknownStyles>>).concat(styleFromProps)
-          }
-          propsForElement.style = style
-          propsForElement.theme = props.theme
+            const styleFromProps = props.style
+            if (styleFromProps) {
+              style = ([style] as Array<StyleProp<UnknownStyles>>).concat(styleFromProps)
+            }
+            propsForElement.style = style
+            propsForElement.theme = props.theme
 
-          return createElement(CastedComponent, propsForElement)
+            return createElement(CastedComponent, propsForElement)
+          } catch (error: unknown) {
+            injectReciverPathToStack(error, meta?.reciverFrames)
+            throw error
+          }
         }
       ) as StyledComponent
 
-      StyledComponent.displayName = 'StyledComponent'
+      StyledComponent.displayName = meta?.displayName ?? getStyledDisplayName(Component)
       StyledComponent.isStyled = true
       StyledComponent.styles = initialStyles
       StyledComponent.attrs = attrs
@@ -102,14 +110,19 @@ export function createStyled<Theme extends AnyTheme>() {
       return StyledComponent
     }
     const attrs = (styled: typeof innerStyled) => (attrsOrAttrsFn: InnerAttrs) => {
-      const styledWithAttrs = (styles: UnknownStyles, attrs: InnerAttrs[] = []) =>
-        styled(styles, [attrsOrAttrsFn].concat(attrs))
+      const styledWithAttrs = (styles: UnknownStyles, attrs: InnerAttrs[] = [], meta?: Meta) => {
+        return styled(styles, [attrsOrAttrsFn].concat(attrs), meta)
+      }
       // @ts-expect-error
       styledWithAttrs.attrs = attrs(styledWithAttrs)
+      styledWithAttrs.meta = (meta: Meta) => (
+        (styles: UnknownStyles, attrs: InnerAttrs[] = []) => styledWithAttrs(styles, attrs, meta)
+      )
 
       return styledWithAttrs
     }
     innerStyled.attrs = attrs(innerStyled)
+    innerStyled.meta = (meta: Meta) => (styles: UnknownStyles, attrs: InnerAttrs[] = []) => innerStyled(styles, attrs, meta)
     // We use as unknown as Type constraction here becasue
     // it is expected that argument so the styled function is transformed to an Array<Array> type during Babel transpilation.
     return innerStyled as unknown as Styled<C, Theme>

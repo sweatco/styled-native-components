@@ -68,6 +68,19 @@ export type UnknownStyles = Record<string, any>
 export type AttrsFn = (props: Themed<UnknownProps, AnyTheme>) => UnknownProps
 export type InnerAttrs = AttrsFn | UnknownProps
 
+export interface Meta {
+  /**
+   * Display name of target:
+   * const MyComponent = styled.View`...` // MyComponent.displayName === "MyComponent"
+   */
+  displayName?: string
+  /**
+   * Needed for the correct identification of the source in React DevTools.
+   * For more info see {@link injectReciverPathToStack}
+   */
+  reciverFrames?: () => Error
+}
+
 export interface AnyStyleProps {
   style?: StyleProp<UnknownStyles>
 }
