@@ -284,7 +284,6 @@ function buildCssObject(identifier, t, substitutions) {
 }
 
 function createMeta(t, path, state) {
-  const nullIndentifier = t.identifier('null')
   const displayName = getDisplayName(t, path, state)
   const reciverFrames = t.arrowFunctionExpression(
     [], // No parameters
