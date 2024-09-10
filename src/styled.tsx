@@ -76,7 +76,6 @@ export function createStyled<Theme extends AnyTheme>() {
         (props: PropsWithChildren<ThemedProps & AnyStyleProps & AsComponentProps>, ref: React.ForwardedRef<unknown>) => {
           try {
             const theme = useContext(ThemeContext)
-            const CastedComponent = (props.as ?? origin) as AnyComponent
             let propsForElement: ThemedProps = Object.assign({}, props, { theme, ref })
             let style: StyleProp<UnknownStyles> = fixedStyle
 
@@ -94,6 +93,7 @@ export function createStyled<Theme extends AnyTheme>() {
             propsForElement.style = style
             propsForElement.theme = props.theme
 
+            const CastedComponent = (propsForElement.as ?? origin) as AnyComponent
             return createElement(CastedComponent, propsForElement)
           } catch (error: unknown) {
             injectReciverPathToStack(error, meta?.reciverFrames)
