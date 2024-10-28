@@ -72,8 +72,8 @@ export function createStyled<Theme extends AnyTheme>() {
 
       // Component
       type ThemedProps = Themed<UnknownProps, Theme>
-      const StyledComponent = React.forwardRef(
-        (props: PropsWithChildren<ThemedProps & AnyStyleProps & AsComponentProps>, ref: React.ForwardedRef<unknown>) => {
+      const StyledComponent = React.forwardRef<unknown, PropsWithChildren<ThemedProps & AnyStyleProps & AsComponentProps>>(
+        (props, ref) => {
           try {
             const theme = useContext(ThemeContext)
             let propsForElement: ThemedProps = Object.assign({}, props, { theme, ref })
@@ -91,7 +91,7 @@ export function createStyled<Theme extends AnyTheme>() {
               style = ([style] as Array<StyleProp<UnknownStyles>>).concat(styleFromProps)
             }
             propsForElement.style = style
-            propsForElement.theme = props.theme
+            propsForElement.theme = props.theme as Theme
 
             const CastedComponent = (propsForElement.as ?? origin) as AnyComponent
             return createElement(CastedComponent, propsForElement)
