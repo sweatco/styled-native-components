@@ -1,5 +1,5 @@
-import { createStyled } from './src/styled'
-import { Styled } from './src/types'
+import { createStyled } from './styled'
+import { Styled } from './types'
 
 export { createStyled }
 

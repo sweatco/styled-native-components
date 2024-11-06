@@ -1,6 +1,6 @@
 import { createStyled } from '../styled'
 import { buildDynamicStyles } from '../buildDynamicStyles'
-import styled from '../..'
+import styled from '../index'
 
 const { css } = createStyled()
 const props = { theme: {} }

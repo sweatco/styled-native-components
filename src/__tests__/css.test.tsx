@@ -9,7 +9,7 @@ describe('styled props', () => {
     const { css } = createStyled()
     const styles = css`
       //comment
-      transform: rotate(${'android' === 'android' ? 180 : 0}deg) scale(${1});
+      transform: rotate(${true ? 180 : 0}deg) scale(${1});
       flex: ${2}; // iniline comment
       flex-direction: ${'1'};
       justify-content: ${'1'};
@@ -326,13 +326,13 @@ describe('styled props', () => {
 
   test('Should handle nested functions', () => {
     const cfs = (value: number) => (_props: UnknownProps) => value
-    const props = { scale: 2 }
+    const scaleProps = { scale: 2 }
     const { css } = createStyled()
-    const styles = css<typeof props>`
+    const styles = css<typeof scaleProps>`
       font-size: ${({ scale }) => cfs(2 * scale)}px;
     `
 
-    expect(buildDynamicStyles(props, styles)).toStrictEqual({
+    expect(buildDynamicStyles(scaleProps, styles)).toStrictEqual({
       fontSize: 4,
     })
   })

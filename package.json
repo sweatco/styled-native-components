@@ -1,17 +1,70 @@
 {
   "name": "styled-native-components",
-  "version": "1.0.0",
-  "main": "index.ts",
-  "source": "index.ts",
-  "types": "index.ts",
-  "react-native": "index.ts",
-  "repository": "git@github.com:sweatco/styled-native-components.git",
-  "author": "Ivan Kuchaev",
+  "version": "0.1.0",
+  "types": "./lib/typescript/module/src/index.d.ts",
+  "source": "./src/index.ts",
+  "main": "./lib/commonjs/index.js",
+  "module": "./lib/module/index.js",
+  "author": "Ivan Kuchaev <kuchaev.iy@gmail.com> (https://github.com/Augustach)",
   "license": "MIT",
-  "private": true,
   "scripts": {
-    "test": "yarn jest --clearCache && yarn jest"
+    "test": "jest",
+    "typecheck": "tsc",
+    "lint": "eslint \"**/*.{js,ts,tsx}\"",
+    "prepare": "bob build",
+    "release": "release-it"
   },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:sweatco/styled-native-components.git"
+  },
+  "keywords": [
+    "react-native",
+    "styled-components",
+    "css-in-js",
+    "css-to-react-native"
+  ],
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./lib/typescript/module/src/index.d.ts",
+        "default": "./lib/module/index.js"
+      },
+      "require": {
+        "types": "./lib/typescript/commonjs/src/index.d.ts",
+        "default": "./lib/commonjs/index.js"
+      }
+    },
+    "./native": {
+      "import": {
+        "types": "./lib/typescript/module/src/index.d.ts",
+        "default": "./lib/module/index.js"
+      },
+      "require": {
+        "types": "./lib/typescript/commonjs/src/index.d.ts",
+        "default": "./lib/commonjs/index.js"
+      }
+    },
+    "./babel-plugin": {
+      "import": "./babel-plugin/index.js",
+      "require": "./babel-plugin/index.js"
+    }
+  },
+  "files": [
+    "src",
+    "lib",
+    "native",
+    "!**/__tests__",
+    "!**/__fixtures__",
+    "!**/__mocks__",
+    "!**/.*"
+  ],
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
+  "workspaces": [
+    "example"
+  ],
   "dependencies": {
     "css-to-react-native": "^3.2.0",
     "postcss": "^8.4.38"
@@ -19,15 +72,23 @@
   "devDependencies": {
     "@babel/cli": "^7.24.5",
     "@babel/types": "^7.24.5",
+    "@commitlint/config-conventional": "^19.5.0",
+    "@evilmartians/lefthook": "^1.8.2",
     "@react-native/babel-preset": "0.74.83",
+    "@react-native/eslint-config": "^0.75.3",
+    "@release-it/conventional-changelog": "^9.0.2",
     "@tsconfig/react-native": "^3.0.5",
     "@types/jest": "^29.5.11",
     "@types/node": "^20.10.5",
     "@types/react": "^18.3.12",
+    "commitlint": "^19.5.0",
+    "eslint": "8.51.0",
     "jest": "^29.7.0",
     "prettier": "^3.3.2",
     "react": "^18.3.1",
     "react-native": "^0.74.1",
+    "react-native-builder-bob": "^0.30.3",
+    "release-it": "^17.10.0",
     "typescript": "^5.6.3"
   },
   "peerDependencies": {
@@ -37,5 +98,52 @@
   "resolutions": {
     "braces": "^3.0.3"
   },
-  "packageManager": "yarn@4.1.1"
+  "packageManager": "yarn@4.1.1",
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  },
+  "release-it": {
+    "git": {
+      "commitMessage": "chore: release ${version}",
+      "tagName": "v${version}"
+    },
+    "npm": {
+      "publish": true
+    },
+    "github": {
+      "release": true
+    },
+    "plugins": {
+      "@release-it/conventional-changelog": {
+        "preset": "angular"
+      }
+    }
+  },
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "targets": [
+      [
+        "commonjs",
+        {
+          "esm": true
+        }
+      ],
+      [
+        "module",
+        {
+          "esm": true
+        }
+      ],
+      [
+        "typescript",
+        {
+          "project": "tsconfig.build.json",
+          "esm": true
+        }
+      ]
+    ]
+  }
 }

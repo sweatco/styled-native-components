@@ -2,14 +2,10 @@ const { isCallExpression, isIdentifier, isMemberExpression, isVariableDeclarator
 const postcss = require('postcss')
 const { transform } = require('./transform')
 const { MIXIN, RUNTIME } = require('./constants')
-const { createHash } = require('crypto')
-const Path = require('path')
 
 const STYLED = 'styled'
 const CSS = 'css'
 const MAGIC_NUMBER = 123456789
-const FILE_HASH = 'styled-native-components-file-hash'
-const NEXT_ID_KEY = 'styled-native-components-next-id'
 const SUBSTITUTION_REGEX = new RegExp(`(\\d+\\.${MAGIC_NUMBER})`, 'g')
 function kebabToCamel(str) {
   return str.replace(/-./g, (match) => match.charAt(1).toUpperCase())
@@ -301,11 +297,6 @@ function createMeta(t, path, state) {
 }
 
 function getDisplayName(t, path, state) {
-  const componentPath = Path
-        .relative(state.cwd, state.filename)
-        .replace(/\\/g, '/')
-  const line = path?.node?.loc?.start.line
-  const pathToComponent = `${componentPath}:${line}`
   const parentNode = path?.parentPath?.node
   let name = 'Styled'
 

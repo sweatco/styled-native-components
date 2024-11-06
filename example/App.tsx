@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { Button, StyleSheet, Text, View } from 'react-native'
 
 import { StyledNativeComponent } from './components/StyledNativeComponent'

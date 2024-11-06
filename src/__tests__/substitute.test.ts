@@ -19,7 +19,7 @@ describe('substitute', () => {
     const props = { object, theme: {} }
     const fnAsArg = jest.fn(() => fnAsArgResult)
     const args = [1, 'string', true, {}, object, array, fnAsArg]
-    const fn = jest.fn((props: unknown) => props)
+    const fn = jest.fn((nextProps: unknown) => nextProps)
 
     // @ts-expect-error
     const fnResult = substitute(fn, args)(props)

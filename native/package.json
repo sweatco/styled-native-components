@@ -1,0 +1,10 @@
+{
+    "name": "styled-native-components/native",
+    "version": "0.0.1",
+    "types": "../lib/typescript/module/src/index.d.ts",
+    "source": "../src/index.tsx",
+    "main": "../lib/commonjs/index.js",
+    "module": "../lib/module/index.js",
+    "author": "Ivan Kuchaev <kuchaev.iy@gmail.com> (https://github.com/Augustach)",
+    "license": "MIT"
+}

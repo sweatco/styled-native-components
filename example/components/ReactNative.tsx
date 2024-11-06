@@ -1,9 +1,10 @@
+import React from 'react'
 import { StyleSheet, View } from 'react-native'
 import { COUNT } from '../utils'
 
 export const ReactNative = () => {
   return (
-    <View style={{ display: 'flex', flexDirection: 'row' }}>
+    <View style={styles.container}>
       {new Array(COUNT).fill(0).map((_, i) => (
         <View key={i} style={styles.styledView} />
       ))}
@@ -12,6 +13,7 @@ export const ReactNative = () => {
 }
 
 const styles = StyleSheet.create({
+  container: { display: 'flex', flexDirection: 'row' },
   styledView: {
     borderColor: 'red',
     borderWidth: 2,

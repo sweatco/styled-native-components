@@ -1,14 +1,19 @@
-import { View } from 'react-native'
+import React from 'react'
+import { StyleSheet, View } from 'react-native'
 import styled from 'styled-components/native'
 import { COUNT } from '../utils'
 
 export const StyledComponent = () => (
-  <View style={{ display: 'flex', flexDirection: 'row' }}>
+  <View style={styles.container}>
     {new Array(COUNT).fill(0).map((_, i) => (
       <StyledView key={i} />
     ))}
   </View>
 )
+
+const styles = StyleSheet.create({
+  container: { display: 'flex', flexDirection: 'row' },
+})
 
 const StyledView = styled.View`
   border-color: red;

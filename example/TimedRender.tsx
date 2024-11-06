@@ -1,7 +1,7 @@
 /* picked from https://github.com/efstathiosntonas/react-native-style-libraries-benchmark/blob/main/components/TimedRender.js
  */
 
-import { useLayoutEffect, useState } from 'react'
+import React, { useLayoutEffect, useState } from 'react'
 import { StyleSheet, Text } from 'react-native'
 
 function TimedRender(props: React.PropsWithChildren) {

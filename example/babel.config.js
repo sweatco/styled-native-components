@@ -1,20 +1,15 @@
 const path = require('path')
-const pak = require('../package.json')
+const { getConfig } = require('react-native-builder-bob/babel-config')
+const pkg = require('../package.json')
 
-const styledNativeComponents = path.join(__dirname, '..', pak.source)
+const root = path.resolve(__dirname, '..')
 
-module.exports = {
-  presets: ['module:@react-native/babel-preset'],
-  plugins: [
-    ['../babel-plugin', { imports: [styledNativeComponents] }],
-    [
-      'module-resolver',
-      {
-        extensions: ['.tsx', '.ts', '.js', '.json'],
-        alias: {
-          [pak.name]: styledNativeComponents,
-        },
-      },
+module.exports = getConfig(
+  {
+    presets: ['module:@react-native/babel-preset'],
+    plugins: [
+      ['styled-native-components/babel-plugin', { imports: [path.join(root, pkg.source)] }],
     ],
-  ],
-}
+  },
+  { root, pkg }
+)
