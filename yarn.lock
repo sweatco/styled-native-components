@@ -4271,6 +4271,38 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@sweatco/styled-native-components@workspace:*, @sweatco/styled-native-components@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "@sweatco/styled-native-components@workspace:."
+  dependencies:
+    "@babel/cli": "npm:^7.24.5"
+    "@babel/types": "npm:^7.24.5"
+    "@commitlint/config-conventional": "npm:^19.5.0"
+    "@evilmartians/lefthook": "npm:^1.8.2"
+    "@react-native/babel-preset": "npm:0.74.83"
+    "@react-native/eslint-config": "npm:^0.75.3"
+    "@release-it/conventional-changelog": "npm:^9.0.2"
+    "@tsconfig/react-native": "npm:^3.0.5"
+    "@types/jest": "npm:^29.5.11"
+    "@types/node": "npm:^20.10.5"
+    "@types/react": "npm:^18.3.12"
+    commitlint: "npm:^19.5.0"
+    css-to-react-native: "npm:^3.2.0"
+    eslint: "npm:8.51.0"
+    jest: "npm:^29.7.0"
+    postcss: "npm:^8.4.38"
+    prettier: "npm:^3.3.2"
+    react: "npm:^18.3.1"
+    react-native: "npm:^0.74.1"
+    react-native-builder-bob: "npm:^0.30.3"
+    release-it: "npm:^17.10.0"
+    typescript: "npm:^5.6.3"
+  peerDependencies:
+    react: ">=18.2.0"
+    react-native: ">=0.73.0"
+  languageName: unknown
+  linkType: soft
+
 "@szmarczak/http-timer@npm:^4.0.5":
   version: 4.0.6
   resolution: "@szmarczak/http-timer@npm:4.0.6"
@@ -14078,45 +14110,13 @@ __metadata:
     "@react-native/babel-preset": "npm:0.75.3"
     "@react-native/metro-config": "npm:0.75.3"
     "@react-native/typescript-config": "npm:0.75.3"
+    "@sweatco/styled-native-components": "workspace:*"
     react: "npm:18.3.1"
     react-devtools: "npm:^5.3.1"
     react-native: "npm:0.75.3"
     react-native-builder-bob: "npm:^0.30.3"
     react-test-renderer: "npm:18.3.1"
     styled-components: "npm:^6.1.11"
-    styled-native-components: "workspace:*"
-  languageName: unknown
-  linkType: soft
-
-"styled-native-components@workspace:*, styled-native-components@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "styled-native-components@workspace:."
-  dependencies:
-    "@babel/cli": "npm:^7.24.5"
-    "@babel/types": "npm:^7.24.5"
-    "@commitlint/config-conventional": "npm:^19.5.0"
-    "@evilmartians/lefthook": "npm:^1.8.2"
-    "@react-native/babel-preset": "npm:0.74.83"
-    "@react-native/eslint-config": "npm:^0.75.3"
-    "@release-it/conventional-changelog": "npm:^9.0.2"
-    "@tsconfig/react-native": "npm:^3.0.5"
-    "@types/jest": "npm:^29.5.11"
-    "@types/node": "npm:^20.10.5"
-    "@types/react": "npm:^18.3.12"
-    commitlint: "npm:^19.5.0"
-    css-to-react-native: "npm:^3.2.0"
-    eslint: "npm:8.51.0"
-    jest: "npm:^29.7.0"
-    postcss: "npm:^8.4.38"
-    prettier: "npm:^3.3.2"
-    react: "npm:^18.3.1"
-    react-native: "npm:^0.74.1"
-    react-native-builder-bob: "npm:^0.30.3"
-    release-it: "npm:^17.10.0"
-    typescript: "npm:^5.6.3"
-  peerDependencies:
-    react: ">=18.2.0"
-    react-native: ">=0.73.0"
   languageName: unknown
   linkType: soft
 

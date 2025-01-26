@@ -1,5 +1,5 @@
 {
-  "name": "styled-native-components",
+  "name": "@sweatco/styled-native-components",
   "version": "0.1.0",
   "types": "./lib/typescript/module/src/index.d.ts",
   "source": "./src/index.ts",

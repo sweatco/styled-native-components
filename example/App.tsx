@@ -34,9 +34,9 @@ export default function App() {
       <Text style={styles.text}>Tap a style library to start rendering</Text>
       <View style={styles.buttons}>
         <Button title="react-native" onPress={onStyleTypePress('react-native')} />
-        <Button title="styled-native-components" onPress={onStyleTypePress('styled-native-components')} />
+        <Button title="@sweatco/styled-native-components" onPress={onStyleTypePress('styled-native-components')} />
         <Button
-          title="styled-native-components (dynamic styles)"
+          title="@sweatco/styled-native-components (dynamic styles)"
           onPress={onStyleTypePress('styled-native-components-dynamic')}
         />
         <Button title="styled-components" onPress={onStyleTypePress('styled-components')} />
