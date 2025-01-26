@@ -3,8 +3,8 @@
     "compilerOptions": {
         "baseUrl": "./",
         "paths": {
-          "styled-native-components": ["./index"],
-          "styled-native-components/native": ["./native"],
+          "@sweatco/styled-native-components": ["./index"],
+          "@sweatco/styled-native-components/native": ["./native"],
         },
         "strictNullChecks": true,
         "noUnusedLocals": true,
