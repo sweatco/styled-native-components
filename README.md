@@ -1,15 +1,15 @@
-# @sweatco/styled-native-components
+# @sweatco/styled
 
 Enjoy the beauty of the `styled-components` combined with the efficiency of `StyleSheet`. This project's objective is to leverage the styled-components library's API, shifting work from runtime to compile time.
 
 ## Setup
-1. Add `@sweatco/styled-native-components/babel-plugin` to your Babel configuration.
+1. Add `@sweatco/styled/babel-plugin` to your Babel configuration.
 ```diff
 module.exports = {
     presets: ['module:metro-react-native-babel-preset',
      
     ],
-+   plugins: ['@sweatco/styled-native-components/babel-plugin'],
++   plugins: ['@sweatco/styled/babel-plugin'],
  }
 ```
 
@@ -20,7 +20,7 @@ module.exports = {
 ```ts
 import React from 'react'
 
-import styled from '@sweatco/styled-native-components'
+import styled from '@sweatco/styled'
 
 const Title = styled.Text<{ color: string }>`
   font-size: 15px;

@@ -1,6 +1,6 @@
 import React from 'react'
 import { StyleSheet, View } from 'react-native'
-import styled from '@sweatco/styled-native-components'
+import styled from '@sweatco/styled'
 import { COUNT } from '../utils'
 
 export const StyledNativeComponentDynamic = () => (

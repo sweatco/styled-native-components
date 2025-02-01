@@ -4271,9 +4271,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sweatco/styled-native-components@workspace:*, @sweatco/styled-native-components@workspace:.":
+"@sweatco/styled@workspace:*, @sweatco/styled@workspace:.":
   version: 0.0.0-use.local
-  resolution: "@sweatco/styled-native-components@workspace:."
+  resolution: "@sweatco/styled@workspace:."
   dependencies:
     "@babel/cli": "npm:^7.24.5"
     "@babel/types": "npm:^7.24.5"
@@ -14110,7 +14110,7 @@ __metadata:
     "@react-native/babel-preset": "npm:0.75.3"
     "@react-native/metro-config": "npm:0.75.3"
     "@react-native/typescript-config": "npm:0.75.3"
-    "@sweatco/styled-native-components": "workspace:*"
+    "@sweatco/styled": "workspace:*"
     react: "npm:18.3.1"
     react-devtools: "npm:^5.3.1"
     react-native: "npm:0.75.3"

@@ -9,12 +9,12 @@ export { createStyled }
  * ```
  * // create styled-native-components.d.ts in your project source
  * // if it isn't being picked up, check tsconfig compilerOptions.types
- * import '@sweatco/styled-native-components'
+ * import '@sweatco/styled'
  * import Theme from './theme'
  *
  * type ThemeType = typeof Theme;
  *
- * declare module "@sweatco/styled-native-components" {
+ * declare module "@sweatco/styled" {
  *  export interface DefaultTheme extends ThemeType {}
  * }
  * ```

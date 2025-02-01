@@ -11,7 +11,7 @@
     "devtools": "(adb reverse tcp:8097 tcp:8097 2>/dev/null || true) && react-devtools"
   },
   "dependencies": {
-    "@sweatco/styled-native-components": "workspace:*",
+    "@sweatco/styled": "workspace:*",
     "react": "18.3.1",
     "react-native": "0.75.3",
     "styled-components": "^6.1.11"

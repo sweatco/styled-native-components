@@ -8,7 +8,7 @@ module.exports = getConfig(
   {
     presets: ['module:@react-native/babel-preset'],
     plugins: [
-      ['@sweatco/styled-native-components/babel-plugin', { imports: [path.join(root, pkg.source)] }],
+      ['@sweatco/styled/babel-plugin', { imports: [path.join(root, pkg.source)] }],
     ],
   },
   { root, pkg }
