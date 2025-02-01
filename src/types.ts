@@ -79,6 +79,10 @@ export interface Meta {
    * For more info see {@link injectReciverPathToStack}
    */
   reciverFrames?: () => Error
+  /**
+   * Test ID generated for the component.
+   */
+  testID?: string
 }
 
 export interface AnyStyleProps {
