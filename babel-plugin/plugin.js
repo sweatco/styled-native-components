@@ -80,17 +80,22 @@ module.exports = function plugin(babel, config) {
         const buildCss = buildCssObject(identifier, t, substitutionMap)
         let tagExpression = tag
 
-        if (process.env.NODE_ENV !== 'production' && !isCSSCallExpression(tag)) {
-          // Create an AST node for the expression .meta({...})
-          const tagWithMetaExpression = t.callExpression(
-            t.memberExpression(
-              tag,
-              t.identifier('meta'),
-              false,
-            ),
-            [createMeta(t, path, state)]
-          )
-          tagExpression = tagWithMetaExpression // .meta({...})
+        if (!isCSSCallExpression(tag)) {
+          const origin = tag?.property?.name ?? tag?.arguments?.[0]?.name // styled.View`...` or styled(View)`...`
+          const meta = createMeta(t, path, state, config, origin)
+
+          if (meta) {
+            // Create an AST node for the expression .meta({...})
+            const tagWithMetaExpression = t.callExpression(
+              t.memberExpression(
+                tag,
+                t.identifier('meta'),
+                false,
+              ),
+              [meta]
+            )
+            tagExpression = tagWithMetaExpression // .meta({...})
+          }
         }
 
         path.replaceWith(t.callExpression(tagExpression, [buildCss(styles)]))
@@ -279,8 +284,20 @@ function buildCssObject(identifier, t, substitutions) {
   }
 }
 
-function createMeta(t, path, state) {
-  const displayName = getDisplayName(t, path, state)
+function createMeta(t, path, state, config, origin) {
+  const isProduction = process.env.NODE_ENV === 'production'
+  if (!config.testIDs?.length || isProduction) {
+    return null
+  }
+
+  const { testIDs = [] } = config
+  const isTestable = testIDs.includes(origin)
+
+  const componentName = getComponentName(t, path, state)
+  let displayName = getDisplayName(`${componentName}`)
+  if (isTestable) {
+    displayName = `TestID(${displayName})`
+  }
   const reciverFrames = t.arrowFunctionExpression(
     [], // No parameters
     t.newExpression(
@@ -288,23 +305,32 @@ function createMeta(t, path, state) {
       [] // No arguments passed to Error
     )
   )
+
   const meta = [
     t.objectProperty(t.identifier('displayName'), t.stringLiteral(displayName)),
-    t.objectProperty(t.identifier('reciverFrames'), reciverFrames),
-  ]
+    isTestable && componentName && t.objectProperty(t.identifier('testID'), t.stringLiteral(componentName)),
+    process.env.NODE_ENV !== 'production' && t.objectProperty(t.identifier('reciverFrames'), reciverFrames),
+  ].filter(Boolean)
 
   return t.objectExpression(meta)
 }
 
-function getDisplayName(t, path, state) {
+function getComponentName(t, path, state) {
   const parentNode = path?.parentPath?.node
-  let name = 'Styled'
 
   if (isVariableDeclarator(parentNode)) {
-    name = parentNode.id.name
-  } else if (isObjectProperty(parentNode)) {
-    name = parentNode.key.name
+    return parentNode.id.name
   }
+
+  if (isObjectProperty(parentNode)) {
+    return parentNode.key.name
+  }
+
+  return null
+}
+
+function getDisplayName(componentName) {
+  const name = componentName ?? 'Styled'
 
   return `Styled(${name})`
 }

@@ -107,6 +107,11 @@ export function createStyled<Theme extends AnyTheme>() {
       StyledComponent.styles = initialStyles
       StyledComponent.attrs = attrs
       StyledComponent.origin = origin
+      if (meta?.testID) {
+        StyledComponent.defaultProps = {
+          testID: meta.testID,
+        }
+      }
       return StyledComponent
     }
     const attrs = (styled: typeof innerStyled) => (attrsOrAttrsFn: InnerAttrs) => {
