@@ -52,7 +52,7 @@ const isStyled = (node) => isStyledCallExpression(node) || isStyledMemberExpress
 module.exports = function plugin(babel, config) {
   const { types: t } = babel
   let hasStyledImport = false
-  const styledImports = ['styled-native-components'].concat(config.imports ?? [])
+  const styledImports = ['@sweatco/styled'].concat(config.imports ?? [])
   return {
     visitor: {
       ImportDeclaration: {
