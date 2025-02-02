@@ -102,14 +102,20 @@ export function createStyled<Theme extends AnyTheme>() {
         }
       ) as StyledComponent
 
-      StyledComponent.displayName = meta?.displayName ?? getStyledDisplayName(Component)
+      let displayName = meta?.displayName ?? getStyledDisplayName(Component)
+      let testID = meta?.testID ?? attrs.find((attr: any): attr is { testID: string } => attr.testID)?.testID
+      if (process.env.NODE_ENV !== 'production' && !displayName.startsWith('TestID') && testID) {
+        displayName = `TestID(${displayName})`
+      }
+
+      StyledComponent.displayName = displayName
       StyledComponent.isStyled = true
       StyledComponent.styles = initialStyles
       StyledComponent.attrs = attrs
       StyledComponent.origin = origin
-      if (meta?.testID) {
+      if (testID) {
         StyledComponent.defaultProps = {
-          testID: meta.testID,
+          testID: testID,
         }
       }
       return StyledComponent
