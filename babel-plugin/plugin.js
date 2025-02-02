@@ -1,5 +1,6 @@
-const { isCallExpression, isIdentifier, isMemberExpression, isVariableDeclarator, isObjectProperty } = require('@babel/types')
+const { isCallExpression, isIdentifier, isMemberExpression, isVariableDeclarator, isObjectProperty, file } = require('@babel/types')
 const postcss = require('postcss')
+const Path = require('path')
 const { transform } = require('./transform')
 const { MIXIN, RUNTIME } = require('./constants')
 
@@ -81,7 +82,12 @@ module.exports = function plugin(babel, config) {
         let tagExpression = tag
 
         if (!isCSSCallExpression(tag)) {
-          const origin = tag?.property?.name ?? tag?.arguments?.[0]?.name // styled.View`...` or styled(View)`...`
+          const origin = (
+            tag?.property?.name ?? // styled.View`...`
+            tag?.arguments?.[0]?.name ?? // styled(View)`...`
+            tag?.callee?.object?.arguments?.[0]?.name ?? // styled(View).attrs`...`
+            tag?.callee?.object?.property?.name // styled.View.attrs`...`
+          )
           const meta = createMeta(t, path, state, config, origin)
 
           if (meta) {
@@ -306,10 +312,16 @@ function createMeta(t, path, state, config, origin) {
     )
   )
 
+  let testID = null
+  if (isTestable && componentName) {
+    const filename = Path.basename(state.file.opts.filename).split('.')[0]
+    testID = filename === 'index' ? componentName : `${filename}.${componentName}`
+  }
+
   const meta = [
-    t.objectProperty(t.identifier('displayName'), t.stringLiteral(displayName)),
-    isTestable && componentName && t.objectProperty(t.identifier('testID'), t.stringLiteral(componentName)),
-    process.env.NODE_ENV !== 'production' && t.objectProperty(t.identifier('reciverFrames'), reciverFrames),
+    !isProduction && t.objectProperty(t.identifier('displayName'), t.stringLiteral(displayName)),
+    testID && t.objectProperty(t.identifier('testID'), t.stringLiteral(testID)),
+    !isProduction && t.objectProperty(t.identifier('reciverFrames'), reciverFrames),
   ].filter(Boolean)
 
   return t.objectExpression(meta)
