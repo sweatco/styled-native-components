@@ -1,6 +1,6 @@
 {
   "name": "@sweatco/styled",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "types": "./lib/typescript/module/src/index.d.ts",
   "source": "./src/index.ts",
   "main": "./lib/commonjs/index.js",
