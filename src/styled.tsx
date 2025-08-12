@@ -114,6 +114,7 @@ export function createStyled<Theme extends AnyTheme>() {
       StyledComponent.attrs = attrs
       StyledComponent.origin = origin
       if (testID) {
+        // @ts-expect-error
         StyledComponent.defaultProps = {
           testID: testID,
         }
